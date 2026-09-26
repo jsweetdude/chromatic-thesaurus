@@ -39,3 +39,7 @@ Every Wikipedia title must be a real article with a lead image, or the card show
 - Placement uses HSL hue for the horizontal axis and OKLab lightness for the vertical, relative to the lightness of the pure hue, so "above the band" always means paler than the basic color.
 - Photos come from the Wikipedia page-images API at view time and are cached in the browser for a month. Nothing is stored server-side.
 - Styling follows the A11y Context design system, dark theme by default, with a light theme toggle.
+
+## License
+
+MIT. See `LICENSE`. The photographs shown at view time belong to their Wikimedia contributors under their own licenses, linked from each card.
