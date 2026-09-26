@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Chromatic Thesaurus</title>
+<meta name="description" content="A zoomable map of color vocabulary for writers: hue left to right, lightness up and down, with a detail card and a photograph for every word.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TOKENS — A11y Context design system (dark is this page's default,
+     because a spectrum reads best on a dark canvas). Spec:
+     03 - Context/Personal/Design-System/a11y-context-design-system.md
+     ============================================================ */
+  :root, :root[data-theme="light"]{
+    --bg:#F5F6F8; --surface:#FFFFFF; --ink:#0E1116; --muted:#5A6270;
+    --border:#E2E4E8; --field-bg:#FBFBFC;
+    --accent:#5B3FD6; --accent-hover:#4E36C0; --accent-soft:#ECEAFB; --link:#4A34B8;
+    --shadow-card:0 1px 2px rgba(14,17,22,.04);
+    --focus-ring:0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+    color-scheme:light;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1117; --surface:#161B22; --ink:#E8EBF0; --muted:#8B95A3;
+    --border:#262C36; --field-bg:#0F141B;
+    --accent:#9C82F5; --accent-hover:#B9A6FA; --accent-soft:#23203A; --link:#B9A6FA;
+    --shadow-card:0 1px 2px rgba(0,0,0,.30);
+    --focus-ring:0 0 0 2px var(--accent), 0 0 0 4px var(--bg);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0D1117; --surface:#161B22; --ink:#E8EBF0; --muted:#8B95A3;
+      --border:#262C36; --field-bg:#0F141B;
+      --accent:#9C82F5; --accent-hover:#B9A6FA; --accent-soft:#23203A; --link:#B9A6FA;
+      --shadow-card:0 1px 2px rgba(0,0,0,.30);
+      --focus-ring:0 0 0 2px var(--accent), 0 0 0 4px var(--bg);
+      color-scheme:dark;
+    }
+  }
+  :root{
+    --display:'Schibsted Grotesk',system-ui,sans-serif;
+    --body:'Hanken Grotesk',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+    --nav-h:56px;
+  }
+
+  /* ============================================================
+     BASE
+     ============================================================ */
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  @supports (height: 100dvh){ html,body{height:100dvh;} }
+  html{background:var(--bg);}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+       display:flex;flex-direction:column;overflow:hidden;
+       transition:background-color .25s ease,color .25s ease;}
+  button{font:inherit;color:inherit;}
+
+  /* Surface-aware double ring, :focus-visible only. The transparent outline
+     survives Windows High Contrast Mode, where box-shadow is dropped. */
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid transparent; outline-offset:2px;
+    box-shadow:var(--focus-ring); border-radius:var(--r-sm);
+  }
+  .search:focus-within{outline:2px solid transparent;outline-offset:2px;box-shadow:var(--focus-ring);}
+  .search input:focus-visible{outline:none;box-shadow:none;}
+  @media (forced-colors: active){
+    a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid;outline-offset:1px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important;}
+  }
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+
+  /* ============================================================
+     NAVBAR — frosted surface, 1px hairline, no drop shadow
+     ============================================================ */
+  .navbar{flex:none;height:var(--nav-h);display:flex;align-items:center;gap:10px;padding:0 16px;
+          border-bottom:1px solid var(--border);
+          background:color-mix(in srgb, var(--surface) 92%, transparent);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);z-index:5;}
+  .brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;}
+  .brand-mark{width:22px;height:22px;border-radius:50%;flex:none;
+              background:conic-gradient(from 0deg,#e0115f,#ff2400,#ffbf00,#7fff00,#008080,#0047ab,#8f00ff,#ff00ff,#e0115f);
+              box-shadow:inset 0 0 0 5px var(--surface);}
+  .brand-word{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap;}
+  .pill{font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--border);
+        border-radius:var(--r-pill);padding:1px 9px;white-space:nowrap;}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+
+  .search{position:relative;display:flex;align-items:center;gap:8px;width:230px;
+          background:var(--field-bg);border:1px solid var(--border);border-radius:var(--r-md);padding:6px 10px;}
+  .search svg{width:15px;height:15px;color:var(--muted);flex:none;}
+  .search input{flex:1;min-width:0;border:none;background:transparent;color:var(--ink);font-family:var(--body);font-size:13.5px;}
+  .search input::placeholder{color:var(--muted);}
+  .search .count{font-size:12px;color:var(--muted);white-space:nowrap;}
+
+  .tbtn{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:12.5px;font-weight:600;
+        line-height:1;color:var(--ink);background:transparent;border:1px solid var(--border);
+        border-radius:var(--r-sm);padding:7px 10px;cursor:pointer;white-space:nowrap;
+        transition:background-color .15s ease,border-color .15s ease,color .15s ease;}
+  .tbtn:hover{background:var(--field-bg);border-color:var(--accent);}
+  .tbtn[aria-pressed="true"]{color:var(--link);border-color:var(--accent);background:var(--accent-soft);}
+  .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;
+            border:none;background:transparent;color:var(--muted);border-radius:var(--r-md);cursor:pointer;}
+  .icon-btn:hover{background:var(--field-bg);color:var(--ink);}
+  .icon-btn svg{width:19px;height:19px;}
+
+  /* ============================================================
+     MAP
+     ============================================================ */
+  main{flex:1;display:flex;min-height:0;}
+  #stage{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;outline:none;min-width:0;}
+  #stage.dragging{cursor:grabbing;}
+  #stage:focus-visible{box-shadow:inset 0 0 0 2px var(--accent);border-radius:0;}
+  #band{position:absolute;inset:0;width:100%;height:100%;}
+  #headers{position:absolute;top:0;left:0;right:0;height:48px;pointer-events:none;overflow:hidden;}
+  .hdr{position:absolute;top:10px;left:0;transform:translateX(-50%);text-align:center;
+       font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;}
+  .hdr::after{content:'';display:block;width:1px;height:9px;margin:3px auto 0;background:var(--muted);}
+  .axis{position:absolute;left:12px;font-size:12px;font-weight:600;color:var(--muted);pointer-events:none;
+        text-transform:uppercase;letter-spacing:.08em;}
+  .axis.top{top:56px;} .axis.bottom{bottom:14px;}
+  #layer{position:absolute;inset:0;}
+
+  .dot{position:absolute;left:0;top:0;z-index:1;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
+       background:var(--c);box-shadow:0 0 0 1.5px var(--bg);will-change:transform;transition:opacity .15s ease;}
+  .dot.neutral{border-radius:2px;}
+  .lbl{position:absolute;left:0;top:0;z-index:2;display:inline-flex;align-items:center;gap:6px;will-change:transform;
+       font-family:var(--body);font-weight:500;font-size:13px;line-height:1.3;color:var(--ink);
+       background:color-mix(in srgb, var(--surface) 95%, transparent);border:1px solid var(--border);
+       border-radius:var(--r-sm);padding:2px 8px 2px 6px;cursor:pointer;white-space:nowrap;
+       transition:opacity .18s ease,border-color .15s ease;}
+  .lbl.t1{font-size:15px;font-weight:600;}
+  .lbl.t3{font-size:12px;font-weight:400;}
+  .lbl .sw{width:9px;height:9px;border-radius:2px;background:var(--c);flex:none;box-shadow:0 0 0 1px var(--border);}
+  .lbl:hover{border-color:var(--accent);}
+  .lbl.hidden{opacity:0;pointer-events:none;}
+  /* Pinned = accent border + underline. Two cues, never color alone. */
+  .lbl.pinned{border-color:var(--accent);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px;}
+  .lbl.hit{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+  .lbl.hit:focus-visible{box-shadow:var(--focus-ring), inset 0 0 0 1px var(--accent);}
+  .dot.dim, .lbl.dim{opacity:.18;}
+  .lbl.dim.hidden{opacity:0;}
+
+  .zoomctl{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px;}
+  .zoomctl .tbtn{width:34px;height:34px;justify-content:center;padding:0;font-size:16px;background:var(--surface);}
+
+  /* ============================================================
+     PANEL
+     ============================================================ */
+  #panel{flex:none;width:350px;border-left:1px solid var(--border);background:var(--surface);
+         overflow-y:auto;padding:22px 22px 30px;}
+  .eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--link);margin-bottom:8px;}
+  #panel h2{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.12;letter-spacing:-.01em;
+            margin-bottom:12px;text-wrap:balance;}
+  .swatch{height:92px;border-radius:var(--r-lg);border:1px solid var(--border);background:var(--c);
+          display:flex;align-items:flex-end;justify-content:flex-end;padding:8px;}
+  .swatch code, .lch{font-family:var(--mono);font-size:12px;background:var(--surface);color:var(--ink);
+          border:1px solid var(--border);border-radius:var(--r-sm);padding:.15em .5em;}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--muted);}
+  .approx{font-size:12.5px;color:var(--muted);margin-top:8px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-sm);}
+  .def{font-size:15.5px;line-height:1.55;margin:16px 0 4px;}
+  .sec{margin-top:18px;}
+  .sec-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px;}
+  .sec p{font-size:14.5px;line-height:1.55;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--ink);background:var(--field-bg);
+        border:1px solid var(--border);border-radius:var(--r-pill);padding:3px 11px;cursor:pointer;}
+  .chip:hover{border-color:var(--accent);}
+  .chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--link);border-color:var(--accent);}
+  .photo{margin-top:10px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;
+         background:var(--field-bg);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+         color:var(--muted);font-size:13px;text-align:center;padding:12px;}
+  .photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo.loaded{padding:0;}
+  .cap{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .cap a{color:var(--link);text-decoration:underline;text-underline-offset:2px;}
+  .nb{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .nb button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;
+             border:1px solid var(--border);border-radius:var(--r-md);padding:6px 9px;color:var(--ink);
+             font-family:var(--body);font-size:13.5px;font-weight:500;cursor:pointer;}
+  .nb button:hover{border-color:var(--accent);background:var(--field-bg);}
+  .nb .sq{width:22px;height:22px;border-radius:var(--r-sm);flex:none;border:1px solid var(--border);background:var(--c);}
+  .nb .rel{margin-left:auto;color:var(--muted);font-size:12px;font-weight:400;text-align:right;}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;}
+  .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;text-transform:uppercase;
+         letter-spacing:.05em;border-radius:var(--r-pill);padding:2px 9px;background:var(--accent-soft);color:var(--link);}
+  .legend p{font-size:14.5px;color:var(--muted);line-height:1.55;margin-bottom:12px;}
+  .legend p strong{color:var(--ink);font-weight:600;}
+  .legend kbd{font-family:var(--body);font-size:12px;border:1px solid var(--border);border-radius:4px;padding:0 5px;color:var(--ink);background:var(--field-bg);}
+  .legend .stat{font-size:13px;color:var(--muted);margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+
+  @media (max-width: 900px){
+    main{flex-direction:column;}
+    #panel{width:auto;height:44vh;border-left:none;border-top:1px solid var(--border);padding:18px 16px 24px;}
+    .search{width:150px;}
+    .pill, .nav-right .hide-sm{display:none;}
+    .navbar{gap:8px;padding:0 12px;}
+    .axis{font-size:11px;} .axis.top{top:52px;} .axis.bottom{bottom:10px;}
+  }
+  /* phones: the toolbar wraps to a second row instead of overflowing */
+  @media (max-width: 640px){
+    .navbar{flex-wrap:wrap;height:auto;padding:8px 12px;row-gap:6px;}
+    .nav-right{flex:1 1 100%;margin-left:0;gap:6px;}
+    .search{flex:1 1 120px;width:auto;min-width:0;}
+    .hdr{font-size:13px;}
+    .zoomctl{bottom:36px;}
+  }
+</style>
+</head>
+<body>
+<header class="navbar">
+  <a class="brand" href="#stage">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-word">Chromatic Thesaurus</span>
+  </a>
+  <span class="pill" id="countPill">…</span>
+
+  <div class="nav-right">
+    <div class="search" role="search">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <input id="q" type="text" placeholder="Find a word: glaucous, umber…" autocomplete="off"
+             aria-label="Find a color word" aria-describedby="qHelp">
+      <span class="count" id="qCount" aria-live="polite"></span>
+    </div>
+    <span id="qHelp" class="sr-only">Type to highlight matching words. Press Enter to jump to the first match. Escape clears the search.</span>
+    <button class="tbtn hide-sm" id="allBtn" type="button" aria-pressed="false" title="Show every label, even where they overlap">All labels</button>
+    <button class="tbtn hide-sm" id="hypBtn" type="button" aria-pressed="false" title="Only words tagged hyperion" hidden>Hyperion</button>
+    <button class="tbtn" id="resetBtn" type="button">Reset view</button>
+    <button id="themeBtn" class="icon-btn" type="button" aria-pressed="true">
+      <span class="sr-only">Dark theme</span>
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M20 13.2A8.2 8.2 0 0 1 10.8 4a8.4 8.4 0 1 0 9.2 9.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div id="stage" tabindex="0" role="group"
+       aria-label="Color map. Drag to pan, scroll to zoom. With the map focused: arrow keys pan, plus and minus zoom, zero resets. Tab moves through the visible words.">
+    <canvas id="band" aria-hidden="true"></canvas>
+    <div id="headers" aria-hidden="true"></div>
+    <span class="axis top" aria-hidden="true">Paler than the pure hue</span>
+    <span class="axis bottom" aria-hidden="true">Deeper than the pure hue</span>
+    <div id="layer"></div>
+    <div class="zoomctl">
+      <button class="tbtn" id="zoomIn" type="button" aria-label="Zoom in">+</button>
+      <button class="tbtn" id="zoomOut" type="button" aria-label="Zoom out">&minus;</button>
+    </div>
+  </div>
+  <aside id="panel" aria-label="Word detail">
+    <div id="panelBody"></div>
+  </aside>
+</main>
+
+<script>
+/* ==========================================================================
+   THE WORD LIST — edit here.
+   Each entry:
+     n     the word, as you would write it
+     hex   the swatch. Position on the map is COMPUTED from this value, so the
+           swatch is the fact and the placement follows. Values follow the
+           common web conventions (Wikipedia / X11) where one exists.
+     t     tier: 1 shows at the widest zoom, 2 appears sooner, 3 only close in
+     def   one sentence: what the color is and how it differs from its neighbors
+     obj   real things that are this color: [label, Wikipedia article title].
+           The card fetches the article's lead photo. The first is the default.
+     ev    what the color evokes on the page
+     or    where the word comes from
+     approx  true when no conventional value exists and the swatch is a best guess
+     neutral true to force the word onto the gray strip (whites, grays, blacks)
+     tags    e.g. ["hyperion"] — flip as you meet the word in the book
+     found   optional note: where you met it ("Hyperion, ch. 1")
+   ========================================================================== */
+const WORDS = [
+  /* ---------------- reds and pinks ---------------- */
+  {n:"Scarlet", hex:"#FF2400", t:1,
+   def:"A brilliant red with a breath of orange in it; the loudest of the reds, and the one that reads as pure red from across a room.",
+   obj:[["Red poppy","Papaver rhoeas"],["Northern cardinal","Northern cardinal"],["British red coat","Red coat (military uniform)"]],
+   ev:"Sin, pageantry, alarm; uniforms and letters.",
+   or:"From scarlata, a fine medieval cloth (probably Persian saqirlāt); the dyed fabric gave its name to the color."},
+  {n:"Vermilion", hex:"#E34234", t:1,
+   def:"A fiery red-orange, the color of ground cinnabar; hotter than scarlet and with none of crimson's blue.",
+   obj:[["Torii gate","Torii"],["Cinnabar","Cinnabar"],["Red lacquerware","Lacquerware"]],
+   ev:"Heat, ceremony, sacred thresholds.",
+   or:"Latin vermiculus, little worm: the kermes insect used for red dye lent its name to the pigment."},
+  {n:"Crimson", hex:"#DC143C", t:1,
+   def:"A deep, rich red that leans toward blue and purple; scarlet's serious older sibling.",
+   obj:[["Pomegranate","Pomegranate"],["Red velvet","Velvet"],["Kermes insect","Kermes (dye)"]],
+   ev:"Passion, royalty, blood; rich rather than alarming.",
+   or:"From kermes, the insect dye, through Arabic qirmiz and Old Spanish cremesín."},
+  {n:"Carmine", hex:"#960018", t:2,
+   def:"A deep, slightly purplish red made from cochineal; darker and more solemn than crimson.",
+   obj:[["Cochineal","Cochineal"],["Carmine pigment","Carmine"],["Lipstick","Lipstick"]],
+   ev:"Luxury, devotion, the theatrical.",
+   or:"Medieval Latin carminium, blending Arabic qirmiz (kermes) with Latin minium (red lead)."},
+  {n:"Cardinal", hex:"#C41E3A", t:3,
+   def:"The vivid red of a cardinal's cassock, sitting between scarlet and crimson.",
+   obj:[["Cardinal's cassock","Cardinal (Catholic Church)"],["Northern cardinal","Northern cardinal"]],
+   ev:"Office, hierarchy, ceremonial power.",
+   or:"Named for the vestments of Roman Catholic cardinals; the bird was named after the churchmen."},
+  {n:"Ruby", hex:"#E0115F", t:2,
+   def:"The red of the gemstone, tilted toward pink and magenta; jewel-bright and cool.",
+   obj:[["Ruby","Ruby"],["Ruby slippers","Ruby slippers"],["Pomegranate seeds","Pomegranate"]],
+   ev:"Treasure, glamour, the precious.",
+   or:"Latin rubeus, red; the stone named the color."},
+  {n:"Cerise", hex:"#DE3163", t:3,
+   def:"A deep pinkish red, the color of ripe cherries; brighter and pinker than crimson.",
+   obj:[["Cherry","Cherry"],["Raspberry","Raspberry"]],
+   ev:"Sweetness, flirtation, mid-century lipstick.",
+   or:"French cerise, cherry."},
+  {n:"Raspberry", hex:"#E30B5C", t:3,
+   def:"A bright pinkish red with a hint of blue, sharper and cooler than cerise.",
+   obj:[["Raspberry","Raspberry"],["Sorbet","Sorbet"]],
+   ev:"Tartness, summer, the playful.",
+   or:"The fruit."},
+  {n:"Rose", hex:"#FF007F", t:2,
+   def:"The pure hue halfway between red and magenta; every softer pink is a tint of this.",
+   obj:[["Rose","Rose"],["Bougainvillea","Bougainvillea"]],
+   ev:"Romance, the floral, the emphatic pink.",
+   or:"The flower; Latin rosa."},
+  {n:"Blush", hex:"#DE5D83", t:3,
+   def:"A rosy pink with body to it, deeper than pastel; the pink of a cheek that has been noticed.",
+   obj:[["Rouge","Rouge (cosmetics)"],["Rosé wine","Rosé"]],
+   ev:"Modesty, exposure, the intimate.",
+   or:"Old English blyscan, to glow red."},
+  {n:"Puce", hex:"#CC8899", t:2,
+   def:"A dusty, brownish pink-purple; a court color of the 1770s, named, unforgettably, for the flea.",
+   obj:[["Flea","Flea"],["Marie Antoinette","Marie Antoinette"]],
+   ev:"Faded elegance, powder rooms, the slightly ridiculous.",
+   or:"French puce, flea."},
+  {n:"Garnet", hex:"#733635", t:3,
+   def:"A dark, brownish red, like the gemstone held away from the light.",
+   obj:[["Garnet","Garnet"],["Merlot","Merlot"]],
+   ev:"Age, warmth, a fireside rather than a fire.",
+   or:"Old French grenat, from Latin granatum, pomegranate, whose seeds the stone resembles."},
+  {n:"Burgundy", hex:"#800020", t:2,
+   def:"A deep purplish red, the color of the wine; darker than crimson, redder than plum.",
+   obj:[["Red wine","Red wine"],["Burgundy wine","Burgundy wine"],["Velvet","Velvet"]],
+   ev:"Wealth, age, autumn, restraint.",
+   or:"Named for the wine of the Burgundy region of France."},
+  {n:"Maroon", hex:"#800000", t:2,
+   def:"A dark brownish red; burgundy with the purple drained out.",
+   obj:[["Chestnut","Chestnut"],["Flag of Qatar","Flag of Qatar"],["Kidney bean","Kidney bean"]],
+   ev:"Institutional dignity, school colors, the settled.",
+   or:"French marron, chestnut."},
+  {n:"Claret", hex:"#7F1734", t:3,
+   def:"The deep red of Bordeaux wine; a burgundy with a little more brown in the glass.",
+   obj:[["Bordeaux wine","Bordeaux wine"],["Claret jug","Claret jug"]],
+   ev:"Old money, decanters, English clubs.",
+   or:"French clairet, a lighter red wine; the English name for the reds of Bordeaux."},
+  {n:"Oxblood", hex:"#4A0000", t:3,
+   def:"A very dark red-brown, nearly black; old leather and dried blood.",
+   obj:[["Dr. Martens boots","Dr. Martens"],["Sang de boeuf glaze","Sang de boeuf glaze"]],
+   ev:"Toughness, age, the visceral.",
+   or:"Literal: the color of an ox's blood; in ceramics, the Chinese sang de boeuf glaze."},
+  {n:"Sanguine", hex:"#A9453B", t:3, approx:true,
+   def:"Blood-red, and also the red-brown chalk of Renaissance drawings; the color of a flushed, hopeful face.",
+   obj:[["Red chalk portrait","Portrait of a Man in Red Chalk"],["Blood","Blood"]],
+   ev:"Vitality, optimism, the medieval humor of blood.",
+   or:"Latin sanguis, blood; the temperament and the chalk share the root."},
+  {n:"Incarnadine", hex:"#B3454E", t:3, approx:true,
+   def:"Flesh-pink in its first life, blood-red after Macbeth used it as a verb; now a crimson-pink for when red is too plain.",
+   obj:[["Macbeth","Macbeth"],["Raw meat","Meat"]],
+   ev:"Guilt, the stain that will not wash out.",
+   or:"Italian incarnatino, flesh-colored, from Latin caro, flesh; Shakespeare made it a verb for turning red."},
+  {n:"Alizarin", hex:"#E32636", t:3,
+   def:"A cool, bluish crimson from the madder root; the painter's crimson.",
+   obj:[["Madder","Rubia tinctorum"],["Alizarin","Alizarin"]],
+   ev:"Studios, tubes of paint, the romantic.",
+   or:"The red dye of madder root, isolated in 1826 and synthesized in 1868."},
+  {n:"Coral", hex:"#FF7F50", t:2,
+   def:"A pinkish orange, warm and soft; orange with the heat turned down and a little pink stirred in.",
+   obj:[["Precious coral","Precious coral"],["Papaya","Papaya"]],
+   ev:"Warmth, tropics, mid-century optimism.",
+   or:"The red skeleton of Corallium rubrum, harvested for jewelry since antiquity."},
+  {n:"Salmon", hex:"#FA8072", t:2,
+   def:"A light pink-orange, the color of the fish's flesh; coral with more pink and less heat.",
+   obj:[["Salmon","Salmon as food"],["Grapefruit","Grapefruit"]],
+   ev:"Appetite, softness, sunrise on a wall.",
+   or:"The fish, whose flesh takes its color from the crustaceans it eats."},
+  {n:"Terracotta", hex:"#E2725B", t:2,
+   def:"The orange-red of fired clay, earthy and matte; brick with the pink still in it.",
+   obj:[["Terracotta Army","Terracotta Army"],["Flowerpot","Flowerpot"],["Roof tiles","Roof tiles"]],
+   ev:"Mediterranean heat, antiquity, the handmade.",
+   or:"Italian terra cotta, baked earth."},
+  {n:"Rust", hex:"#B7410E", t:2,
+   def:"The red-brown of oxidized iron; a burnt orange gone dull and dark.",
+   obj:[["Rust","Rust"],["Shipwreck","Shipwreck"],["Weathering steel","Weathering steel"]],
+   ev:"Decay, abandonment, time made visible.",
+   or:"Old English rūst, related to red."},
+  {n:"Auburn", hex:"#A52A2A", t:3,
+   def:"A reddish brown, said mostly of hair; the red is felt more than seen.",
+   obj:[["Auburn hair","Auburn hair"],["Irish Setter","Irish Setter"],["Titian","Titian"]],
+   ev:"Autumn, warmth, the Pre-Raphaelite.",
+   or:"From Latin alburnus, whitish; medieval scribes confused it with brown and the meaning flipped."},
+  {n:"Cordovan", hex:"#893F45", t:3,
+   def:"A rich red-brown, the color of fine leather; burgundy's leathery cousin.",
+   obj:[["Shell cordovan","Shell cordovan"],["Córdoba","Córdoba, Spain"]],
+   ev:"Craft, polish, the well-made.",
+   or:"Leather from Córdoba, Spain, famed since Moorish times."},
+
+  /* ---------------- oranges and browns ---------------- */
+  {n:"Tangerine", hex:"#F28500", t:3,
+   def:"A bright, clean orange with a drop of red; the fruit at its ripest.",
+   obj:[["Tangerine","Tangerine"],["Traffic cone","Traffic cone"]],
+   ev:"Cheer, appetite, the loud and friendly.",
+   or:"The fruit, named for Tangier, Morocco."},
+  {n:"Persimmon", hex:"#EC5800", t:3,
+   def:"A deep red-orange, the color of the ripe fruit; darker than tangerine, redder than pumpkin.",
+   obj:[["Persimmon","Persimmon"],["Ember","Ember"]],
+   ev:"Autumn lanterns, ripeness, the East Asian palette.",
+   or:"Powhatan (Algonquian) pessamin, dried fruit."},
+  {n:"Apricot", hex:"#FBCEB1", t:3,
+   def:"A pale, pinkish orange, softer than peach; orange lightened almost to cream.",
+   obj:[["Apricot","Apricot"]],
+   ev:"Tenderness, the gentle and edible.",
+   or:"Through Portuguese and Arabic from Latin praecoquum, early-ripe."},
+  {n:"Peach", hex:"#FFE5B4", t:2,
+   def:"A pale yellow-orange with a blush of pink; the skin, not the flesh.",
+   obj:[["Peach","Peach"]],
+   ev:"Youth, softness, the summery.",
+   or:"Latin persicum, the Persian apple."},
+  {n:"Burnt orange", hex:"#CC5500", t:3,
+   def:"A dark, rusty orange with brown in it; orange after the fire.",
+   obj:[["Maple leaves","Maple"],["Pumpkin","Pumpkin"]],
+   ev:"Autumn, 1970s interiors, the smoky.",
+   or:"Descriptive: orange darkened as if scorched."},
+  {n:"Sienna", hex:"#882D17", t:2,
+   def:"A reddish brown earth pigment, warm and opaque; raw it is yellow-brown, burnt it turns red.",
+   obj:[["Siena","Siena"],["Red earth pigment","Ochre"]],
+   ev:"Tuscany, old frescoes, the sun-baked.",
+   or:"Terra di Siena, earth from Siena, Italy, dug since the Renaissance."},
+  {n:"Burnt sienna", hex:"#E97451", t:3,
+   def:"Sienna roasted into a bright red-orange brown; hotter and lighter than the raw earth.",
+   obj:[["Siena rooftops","Siena"],["Oak leaves in autumn","Oak"]],
+   ev:"Warmth, sketchbooks, the painterly.",
+   or:"Raw sienna heated until its iron oxide reddens."},
+  {n:"Umber", hex:"#635147", t:2,
+   def:"A dark, dull brown earth pigment, cooler and grayer than sienna; the color of shadow.",
+   obj:[["Umbria","Umbria"],["Peat","Peat"]],
+   ev:"Shadow, the underpainting, the sober.",
+   or:"Latin umbra, shadow, or the region of Umbria; scholars still argue."},
+  {n:"Sepia", hex:"#704214", t:2,
+   def:"A dark brown with a faded, reddish warmth; old photographs and cuttlefish ink.",
+   obj:[["Cuttlefish","Cuttlefish"],["Albumen print","Albumen print"]],
+   ev:"Nostalgia, memory, the antique.",
+   or:"Greek sēpia, cuttlefish, whose ink was the original pigment."},
+  {n:"Russet", hex:"#80461B", t:2,
+   def:"A reddish brown with orange in it; coarse homespun cloth, and the skin of a russet apple.",
+   obj:[["Russet apple","Russet apple"],["Russet Burbank potato","Russet Burbank"]],
+   ev:"Rustic, autumnal, the humble.",
+   or:"Old French rousset, reddish, from Latin russus; a peasants' cloth by law in medieval England."},
+  {n:"Chestnut", hex:"#954535", t:3,
+   def:"A warm, reddish brown, like the nut's shell; a horse-coat word.",
+   obj:[["Chestnut","Chestnut"],["Chestnut horse","Chestnut (coat)"]],
+   ev:"Autumn, horses, the wholesome.",
+   or:"The nut; Greek kastanea."},
+  {n:"Mahogany", hex:"#C04000", t:3,
+   def:"A deep reddish brown with orange heat, like polished tropical hardwood.",
+   obj:[["Mahogany","Mahogany"],["Antique furniture","Antique furniture"]],
+   ev:"Polish, boardrooms, the colonial.",
+   or:"The wood; the word's origin is uncertain, first recorded in the 1600s."},
+  {n:"Copper", hex:"#B87333", t:2,
+   def:"A reddish-brown metallic orange; the metal before it greens.",
+   obj:[["Copper","Copper"],["Penny","Penny (United States coin)"]],
+   ev:"Conductivity, warmth, the newly minted.",
+   or:"Latin cuprum, from Cyprium aes, metal of Cyprus."},
+  {n:"Bronze", hex:"#CD7F32", t:2,
+   def:"A dull golden brown, the color of the alloy; copper with yellow in it and the shine dimmed.",
+   obj:[["Bronze sculpture","Bronze sculpture"],["Bronze medal","Bronze medal"]],
+   ev:"Antiquity, third place, the enduring.",
+   or:"Italian bronzo, perhaps from Persian birinj, brass."},
+  {n:"Tawny", hex:"#CD5700", t:2,
+   def:"A warm orange-brown, like a lion's coat or tawny port; brown with the sun still in it.",
+   obj:[["Tawny owl","Tawny owl"],["Lion","Lion"],["Port wine","Port wine"]],
+   ev:"The savanna, dusk, the feline.",
+   or:"Anglo-Norman tauné, tanned, from the tanning of leather."},
+  {n:"Fulvous", hex:"#E48400", t:3,
+   def:"A dull reddish yellow or tawny orange; a naturalist's word for dry grass and certain ducks.",
+   obj:[["Fulvous whistling duck","Fulvous whistling duck"],["Hay","Hay"]],
+   ev:"Field guides, savanna, the precise.",
+   or:"Latin fulvus, tawny; in English use since the 1600s."},
+  {n:"Ochre", hex:"#CC7722", t:1,
+   def:"An earthy yellow-orange brown, the oldest pigment; dull where saffron is bright, and deeper than the pure hue.",
+   obj:[["Ochre","Ochre"],["Lascaux cave paintings","Lascaux"],["Roussillon ochre cliffs","Roussillon, Vaucluse"]],
+   ev:"Prehistory, earth, the primordial.",
+   or:"Greek ōkhros, pale yellow."},
+  {n:"Amber", hex:"#FFBF00", t:1,
+   def:"A pure, warm orange-yellow, the color of fossil resin with light behind it.",
+   obj:[["Amber","Amber"],["Traffic light","Traffic light"],["Honey","Honey"]],
+   ev:"Preservation, warning, warm light.",
+   or:"Arabic ʿanbar, ambergris; the word slid from the whale substance to the fossil resin."},
+  {n:"Saffron", hex:"#F4C430", t:1,
+   def:"A rich orange-yellow, the color of the spice's stain; amber pulled toward yellow, with a hint of red.",
+   obj:[["Saffron","Saffron"],["Kasaya robes","Kasaya (clothing)"],["Flag of India","Flag of India"]],
+   ev:"The sacred, the expensive, the South Asian.",
+   or:"Arabic zaʿfarān, through Old French safran."},
+  {n:"Bistre", hex:"#3D2B1F", t:3,
+   def:"A very dark yellowish brown made from beech soot; the ink-wash brown of old master drawings.",
+   obj:[["Beech","Beech"],["Wash drawing","Wash (visual arts)"]],
+   ev:"Smoke, the sketch, the seventeenth century.",
+   or:"French bistre, of unknown origin; the pigment was boiled beech soot."},
+  {n:"Fallow", hex:"#C19A6B", t:3,
+   def:"A pale brownish yellow; one of the oldest color words in English, kept alive by the deer.",
+   obj:[["Fallow deer","Fallow deer"],["Fallow field","Fallow"]],
+   ev:"Rest, dormancy, the agricultural.",
+   or:"Old English fealu, pale brown; unrelated to the resting field, despite the color of one."},
+  {n:"Buff", hex:"#F0DC82", t:3,
+   def:"A pale yellow-tan, the color of undyed buffalo leather; khaki's paler cousin.",
+   obj:[["Leather","Leather"],["File folder","File folder"]],
+   ev:"Uniforms, plainness, the unadorned.",
+   or:"Buff leather, from the buffalo hide it was made of."},
+  {n:"Tan", hex:"#D2B48C", t:3,
+   def:"A pale brown, the color of tanned leather; warmer than khaki, lighter than fallow.",
+   obj:[["Tanned leather","Tanning (leather)"],["Sand","Sand"]],
+   ev:"Summer skin, the plain, the outdoors.",
+   or:"Tannin from oak bark, used to cure hides."},
+  {n:"Ecru", hex:"#C2B280", t:2,
+   def:"The pale grayish yellow of unbleached linen; beige with a little more yellow and a little less warmth.",
+   obj:[["Linen","Linen"],["Silk","Silk"]],
+   ev:"Restraint, natural fibers, the unfinished.",
+   or:"French écru, raw, unbleached."},
+  {n:"Khaki", hex:"#C3B091", t:3,
+   def:"A dusty tan-brown, the color of dry earth; the soldier's camouflage.",
+   obj:[["Khaki drill","Khaki drill"],["Dust","Dust"]],
+   ev:"Empire, deserts, the practical.",
+   or:"Urdu khākī, dust-colored, from Persian khāk, dust; adopted by British forces in India in 1848."},
+
+  /* ---------------- yellows ---------------- */
+  {n:"Gold", hex:"#FFD700", t:2,
+   def:"A deep, saturated yellow with warmth, standing in for the metal's shine.",
+   obj:[["Gold","Gold"],["Wheat","Wheat"],["Gold leaf","Gold leaf"]],
+   ev:"Wealth, glory, the divine.",
+   or:"Old English gold, from a root meaning yellow or bright."},
+  {n:"Mustard", hex:"#FFDB58", t:2,
+   def:"A warm yellow with a brownish edge, like the condiment; gold that has been left out in the weather.",
+   obj:[["Mustard","Mustard (condiment)"],["Mustard plant","Mustard plant"]],
+   ev:"The 1970s, the tangy, the earthy.",
+   or:"The condiment, from Latin mustum, the grape must once used to mix it."},
+  {n:"Maize", hex:"#FBEC5D", t:3,
+   def:"A light, slightly greenish yellow, the color of dried corn.",
+   obj:[["Maize","Maize"]],
+   ev:"Harvest, Americana, sunlight on husks.",
+   or:"Taíno mahiz, by way of Spanish."},
+  {n:"Lemon", hex:"#FFF700", t:3,
+   def:"A sharp, clean yellow with a green edge; the acid of the yellows.",
+   obj:[["Lemon","Lemon"]],
+   ev:"Freshness, acidity, alertness.",
+   or:"The fruit; Arabic līmūn."},
+  {n:"Canary", hex:"#FFEF00", t:3,
+   def:"A bright, pure yellow, like the bird; lemon without the green.",
+   obj:[["Domestic canary","Domestic canary"]],
+   ev:"Cheer, song, the artificially bright.",
+   or:"The bird, from the Canary Islands, themselves named for dogs (Latin canis)."},
+  {n:"Cream", hex:"#FFFDD0", t:2,
+   def:"A very pale yellow-white, the top of the milk; white with warmth in it.",
+   obj:[["Cream","Cream"],["Magnolia","Magnolia"]],
+   ev:"Softness, richness, the domestic.",
+   or:"Latin chrisma, anointing oil, crossed with Gaulish crama."},
+  {n:"Straw", hex:"#E4D96F", t:3,
+   def:"A pale, dull yellow, like dried grain stalks.",
+   obj:[["Straw","Straw"],["Straw hat","Straw hat"]],
+   ev:"Summer's end, the rural, the brittle.",
+   or:"Old English strēaw."},
+  {n:"Jonquil", hex:"#F4CA16", t:3,
+   def:"A golden yellow with a hint of orange, named for the narcissus; between saffron and lemon.",
+   obj:[["Jonquil","Narcissus jonquilla"],["Daffodil","Narcissus (plant)"]],
+   ev:"Spring, fragrance, the ornamental.",
+   or:"French jonquille, from Spanish junquillo, little rush, for the plant's leaves."},
+  {n:"Citrine", hex:"#E4D00A", t:3,
+   def:"A yellow with a greenish, lemony tint, named for the quartz gemstone.",
+   obj:[["Quartz","Quartz"],["Lemon","Lemon"]],
+   ev:"Sharpness, cut stone, the citrus.",
+   or:"Latin citrus, through Old French citrin, lemon-colored."},
+  {n:"Gamboge", hex:"#E49B0F", t:3,
+   def:"A deep, warm saffron-yellow from Southeast Asian tree resin; the traditional yellow of monks' robes.",
+   obj:[["Gamboge resin","Gamboge"],["Kasaya robes","Kasaya (clothing)"]],
+   ev:"Cambodia, resin, the devotional.",
+   or:"From Cambodia (Latin gambogium), where the Garcinia resin was gathered."},
+  {n:"Olive", hex:"#808000", t:2,
+   def:"A dark, dull yellow-green; the surprise is that it is yellow with the light turned down, not green at all.",
+   obj:[["Olive","Olive"],["Olive drab uniform","Olive drab"]],
+   ev:"Military, Mediterranean, the sober.",
+   or:"The fruit; Latin oliva."},
+  {n:"Chartreuse", hex:"#7FFF00", t:1,
+   def:"A vivid yellow-green, exactly between the two; the color of the liqueur, electric and faintly toxic-looking.",
+   obj:[["Chartreuse liqueur","Chartreuse (liqueur)"],["Tennis ball","Tennis ball"],["New leaves","Leaf"]],
+   ev:"Acid, the artificial, springtime at high voltage.",
+   or:"The liqueur made by Carthusian monks at the Grande Chartreuse since the 1700s."},
+
+  /* ---------------- greens ---------------- */
+  {n:"Lime", hex:"#BFFF00", t:3,
+   def:"A bright yellow-green, lighter and yellower than chartreuse; the zest more than the skin.",
+   obj:[["Lime","Lime (fruit)"]],
+   ev:"Zing, the tropical, the synthetic.",
+   or:"The fruit, by way of Arabic līma."},
+  {n:"Moss", hex:"#8A9A5B", t:3,
+   def:"A muted, yellowish green, soft and matte, like a cushion of moss in shade.",
+   obj:[["Moss","Moss"]],
+   ev:"Damp, age, the quiet forest floor.",
+   or:"Old English mos, bog."},
+  {n:"Sage", hex:"#BCB88A", t:2,
+   def:"A grayish, silvery green with yellow in it; green that has been dusted with ash.",
+   obj:[["Sage","Salvia officinalis"],["Sagebrush","Artemisia tridentata"]],
+   ev:"Calm, herbs, the high desert.",
+   or:"The herb; Latin salvia, from salvus, healthy."},
+  {n:"Celadon", hex:"#ACE1AF", t:1,
+   def:"A pale, grayish jade-green, the color of the glaze; green with the saturation turned nearly off.",
+   obj:[["Celadon ware","Celadon"],["Goryeo celadon","Goryeo ware"]],
+   ev:"Serenity, porcelain, East Asian restraint.",
+   or:"Named for Céladon, a shepherd in Honoré d'Urfé's novel L'Astrée (1607) who wore pale green ribbons."},
+  {n:"Jade", hex:"#00A86B", t:2,
+   def:"A rich, bluish green, the polished stone at its best; deeper than celadon, cooler than emerald.",
+   obj:[["Jade","Jade"],["Jadeite","Jadeite"]],
+   ev:"Virtue, the imperial, the precious-but-hard.",
+   or:"Spanish piedra de ijada, stone of the flank, once believed to cure kidney pain."},
+  {n:"Emerald", hex:"#50C878", t:1,
+   def:"A bright, clear green with a hint of blue; the gem, and Ireland on a postcard.",
+   obj:[["Emerald","Emerald"],["Ireland","Ireland"]],
+   ev:"Envy, the lush, the precious.",
+   or:"Greek smaragdos, through Old French esmeraude."},
+  {n:"Viridian", hex:"#40826D", t:2,
+   def:"A cool, bluish green pigment, dark and slightly gray; green seen through deep water.",
+   obj:[["Viridian pigment","Viridian"],["Spruce","Spruce"]],
+   ev:"Depth, the painterly, cold water.",
+   or:"Latin viridis, green; the chromium pigment dates from 1838."},
+  {n:"Malachite", hex:"#0BDA51", t:3,
+   def:"A vivid, banded green, the color of the copper mineral; brighter than emerald, greener than jade.",
+   obj:[["Malachite","Malachite"]],
+   ev:"Mineral, the ornamental, Russian palaces.",
+   or:"Greek malakhē, mallow, for the leaf color."},
+  {n:"Verdigris", hex:"#43B3AE", t:2,
+   def:"The blue-green patina on weathered copper and bronze; teal with a chalky, corroded softness.",
+   obj:[["Statue of Liberty","Statue of Liberty"],["Copper roof","Copper in architecture"]],
+   ev:"Age, weather, the beautifully ruined.",
+   or:"Old French vert-de-Grèce, green of Greece."},
+  {n:"Forest green", hex:"#228B22", t:3,
+   def:"A dark, natural green, the canopy in summer; deeper than emerald, without its blue.",
+   obj:[["Forest","Forest"],["Pine","Pine"]],
+   ev:"Shelter, the wild, Robin Hood.",
+   or:"Descriptive."},
+  {n:"Hunter green", hex:"#355E3B", t:3,
+   def:"A very dark, slightly gray green, the color of nineteenth-century hunting coats.",
+   obj:[["Billiard table","Billiard table"],["Hunting","Hunting"]],
+   ev:"Tradition, tweed, the country estate.",
+   or:"Named for the coats of English hunters in the 1800s."},
+  {n:"Fern", hex:"#4F7942", t:3,
+   def:"A medium, slightly muted green, like fronds in shade.",
+   obj:[["Fern","Fern"]],
+   ev:"Undergrowth, the prehistoric, the shaded.",
+   or:"Old English fearn."},
+  {n:"Bottle green", hex:"#006A4E", t:3,
+   def:"A dark, bluish green, like thick old glass held to the light.",
+   obj:[["Glass bottle","Glass bottle"],["Wine bottle","Wine bottle"]],
+   ev:"School uniforms, cellars, the Victorian.",
+   or:"The dark glass of antique bottles."},
+  {n:"Mint", hex:"#3EB489", t:3,
+   def:"A fresh, cool green with blue in it; jade lightened and made cheerful.",
+   obj:[["Mint","Mentha"]],
+   ev:"Freshness, cool breath, the 1950s kitchen.",
+   or:"The herb; Latin mentha."},
+  {n:"Sea green", hex:"#2E8B57", t:3,
+   def:"A medium bluish green, the color of shallow water over sand.",
+   obj:[["Sea","Sea"],["Lagoon","Lagoon"]],
+   ev:"Shallows, the maritime, the calm.",
+   or:"Descriptive; in use since the 1500s."},
+  {n:"Eau de Nil", hex:"#7EA58F", t:3, approx:true,
+   def:"A pale, grayish green, water of the Nile; celadon with a little more gray and blue.",
+   obj:[["Nile","Nile"],["Art Deco","Art Deco"]],
+   ev:"The 1930s, Egypt-mania, faded chic.",
+   or:"French, water of the Nile; a fashionable color from the 1890s to the 1930s."},
+  {n:"Myrtle", hex:"#21421E", t:3,
+   def:"A very dark, slightly bluish green, the color of the shrub's leaves.",
+   obj:[["Myrtle","Myrtus"]],
+   ev:"Mourning, evergreens, the classical.",
+   or:"The shrub; Greek myrtos."},
+  {n:"Pistachio", hex:"#93C572", t:3,
+   def:"A light, yellowish green with a milky softness; the nut, not the ice cream.",
+   obj:[["Pistachio","Pistachio"]],
+   ev:"Confection, spring, the sweet.",
+   or:"Persian pistah, through Italian pistacchio."},
+
+  /* ---------------- cyans and teals ---------------- */
+  {n:"Teal", hex:"#008080", t:1,
+   def:"A dark blue-green, exactly between the two; named for the duck's eye stripe.",
+   obj:[["Eurasian teal","Eurasian teal"],["Lagoon","Lagoon"]],
+   ev:"Depth, the 1990s, the sophisticated.",
+   or:"The duck, whose head carries the color."},
+  {n:"Turquoise", hex:"#40E0D0", t:2,
+   def:"A bright greenish blue, the color of the stone; teal with the lights on.",
+   obj:[["Turquoise","Turquoise"],["Caribbean shallows","Caribbean Sea"],["Native American jewelry","Native American jewelry"]],
+   ev:"The Southwest, shallows, the talismanic.",
+   or:"French turquoise, Turkish, since the stone reached Europe through Turkey."},
+  {n:"Aquamarine", hex:"#7FFFD4", t:3,
+   def:"A pale, clear blue-green, like the beryl gem or seawater in sun.",
+   obj:[["Aquamarine","Aquamarine (gem)"],["Seawater","Seawater"]],
+   ev:"Clarity, the tropical, the crystalline.",
+   or:"Latin aqua marina, seawater."},
+  {n:"Cerulean", hex:"#007BA7", t:1,
+   def:"A clear, medium sky blue with a hint of green; the sky at noon, not at the horizon.",
+   obj:[["Sky","Sky"],["Cerulean warbler","Cerulean warbler"],["Kingfisher","Kingfisher"]],
+   ev:"Openness, the celestial, calm.",
+   or:"Latin caeruleus, sky-blue, from caelum, sky."},
+
+  /* ---------------- blues ---------------- */
+  {n:"Azure", hex:"#007FFF", t:2,
+   def:"A bright, pure blue with a whisper of cyan; the heraldic blue of skies and banners.",
+   obj:[["Sky","Sky"],["Azurite","Azurite"],["French Riviera","French Riviera"]],
+   ev:"Heraldry, the Mediterranean, the ideal.",
+   or:"Persian lāžward, lapis lazuli, through Arabic and Old French; the initial l was lost on the way."},
+  {n:"Sky blue", hex:"#87CEEB", t:3,
+   def:"A pale, soft blue, the daytime sky near the horizon.",
+   obj:[["Sky","Sky"]],
+   ev:"Innocence, openness, the everyday.",
+   or:"Descriptive."},
+  {n:"Powder blue", hex:"#B0E0E6", t:3,
+   def:"A very pale, slightly grayish blue; the powdered smalt once used to blue laundry.",
+   obj:[["Hydrangea","Hydrangea"],["Jasperware","Jasperware"],["Cobalt glass","Cobalt glass"]],
+   ev:"Nurseries, the delicate, the mid-century.",
+   or:"Powdered smalt (cobalt glass) used as a laundry whitener."},
+  {n:"Cobalt", hex:"#0047AB", t:1,
+   def:"A deep, vivid, slightly purplish blue; the blue of Chinese porcelain and of glass.",
+   obj:[["Blue and white porcelain","Blue and white pottery"],["Cobalt glass","Cobalt glass"],["Cobalt","Cobalt"]],
+   ev:"Intensity, ceramics, the ultramodern.",
+   or:"German Kobold, goblin; miners blamed the ore's poisonous fumes on goblins."},
+  {n:"Sapphire", hex:"#0F52BA", t:2,
+   def:"A rich, deep blue with a hint of violet; the gem's blue, darker than cobalt.",
+   obj:[["Sapphire","Sapphire"]],
+   ev:"Nobility, fidelity, the precious.",
+   or:"Greek sappheiros, which probably meant lapis lazuli."},
+  {n:"Ultramarine", hex:"#120A8F", t:2,
+   def:"The deepest, most purplish pure blue; ground lapis lazuli, once costlier than gold.",
+   obj:[["Lapis lazuli","Lapis lazuli"],["International Klein Blue","International Klein Blue"],["Madonna in art","Madonna (art)"]],
+   ev:"The sacred, the costly, the absolute.",
+   or:"Latin ultramarinus, beyond the sea, since the lapis came from Afghanistan by ship."},
+  {n:"Navy", hex:"#000080", t:2,
+   def:"A very dark blue, nearly black in low light; the uniform blue.",
+   obj:[["Royal Navy uniform","Uniforms of the Royal Navy"],["Sea at night","Sea"]],
+   ev:"Authority, formality, the dependable.",
+   or:"The dark blue of British Royal Navy uniforms, adopted in 1748."},
+  {n:"Prussian blue", hex:"#003153", t:2,
+   def:"A very dark, slightly greenish blue, the first modern synthetic pigment; navy with a chemical chill.",
+   obj:[["The Great Wave off Kanagawa","The Great Wave off Kanagawa"],["Cyanotype","Cyanotype"]],
+   ev:"Engravings, the industrial, the cold.",
+   or:"Made by accident in Berlin around 1706; Prussian uniforms wore it."},
+  {n:"Midnight blue", hex:"#191970", t:3,
+   def:"A dark blue with more violet than navy; the sky an hour after dusk.",
+   obj:[["Night sky","Night sky"]],
+   ev:"Mystery, formalwear, the nocturnal.",
+   or:"Descriptive."},
+  {n:"Royal blue", hex:"#4169E1", t:3,
+   def:"A bright, deep blue with a touch of violet; brighter than navy, warmer than cobalt.",
+   obj:[["Queen Charlotte","Charlotte of Mecklenburg-Strelitz"],["Sapphire","Sapphire"]],
+   ev:"Pageantry, sports kits, the confident.",
+   or:"Said to have been created for a dress for Queen Charlotte in the early 1800s."},
+  {n:"Cornflower", hex:"#6495ED", t:3,
+   def:"A medium, soft blue with a hint of violet; the wildflower's blue.",
+   obj:[["Cornflower","Centaurea cyanus"]],
+   ev:"Meadows, the pastoral, German Romanticism.",
+   or:"The flower Centaurea cyanus."},
+  {n:"Lapis lazuli", hex:"#26619C", t:2,
+   def:"A deep, slightly grayed blue, the stone unpolished; the raw material of ultramarine.",
+   obj:[["Lapis lazuli","Lapis lazuli"],["Sar-i Sang mines","Sar-i Sang"]],
+   ev:"Antiquity, Egypt, the mined.",
+   or:"Latin lapis, stone, plus Persian lāžward."},
+  {n:"Steel blue", hex:"#4682B4", t:3,
+   def:"A medium grayish blue, like blued steel.",
+   obj:[["Blued steel","Bluing (steel)"]],
+   ev:"The industrial, the cool, the guarded.",
+   or:"The blue-gray oxide finish on steel."},
+  {n:"Slate blue", hex:"#6A5ACD", t:3,
+   def:"A medium blue-violet with gray in it.",
+   obj:[["Slate","Slate"]],
+   ev:"The bookish, the twilight.",
+   or:"Descriptive."},
+  {n:"Periwinkle", hex:"#CCCCFF", t:2,
+   def:"A pale lavender-blue, the color of the flower; blue with white and a little violet folded in.",
+   obj:[["Periwinkle","Vinca minor"]],
+   ev:"Softness, spring, the gentle.",
+   or:"The flower; Latin pervinca."},
+  {n:"Indigo", hex:"#091F92", t:2,
+   def:"A deep blue-violet dye color, darker than cobalt; on screens indigo is often shown purpler than the dye really is.",
+   obj:[["Indigo dye","Indigo dye"],["Denim","Denim"],["Indigofera","Indigofera tinctoria"]],
+   ev:"Workwear, trade routes, the deep.",
+   or:"Greek indikon, from India."},
+  {n:"Denim", hex:"#1560BD", t:3,
+   def:"A medium blue, the color of new jeans; indigo lightened by wear.",
+   obj:[["Denim","Denim"]],
+   ev:"Work, America, the everyday.",
+   or:"French serge de Nîmes, cloth of Nîmes."},
+  {n:"Glaucous", hex:"#6082B6", t:2,
+   def:"A dull grayish blue or blue-green; the bloom on a plum or a grape, the frosted look of some leaves.",
+   obj:[["Plum bloom","Plum"],["Glaucous gull","Glaucous gull"],["Blue spruce","Blue spruce"]],
+   ev:"Frost, the botanical, the sea-bird's gray.",
+   or:"Greek glaukos, gleaming gray-blue; Homer's word for Athena's eyes."},
+
+  /* ---------------- violets, purples, magentas ---------------- */
+  {n:"Violet", hex:"#8F00FF", t:2,
+   def:"A pure spectral purple-blue, the last color of the rainbow; bluer than purple, redder than indigo.",
+   obj:[["Violet","Viola (plant)"]],
+   ev:"The spectral edge, the ecclesiastical, the mystic.",
+   or:"The flower; Latin viola."},
+  {n:"Amethyst", hex:"#9966CC", t:1,
+   def:"A medium purple with a soft, quartz clarity; violet with pink in it.",
+   obj:[["Amethyst","Amethyst"]],
+   ev:"Sobriety, the bishop's ring, the crystalline.",
+   or:"Greek amethystos, not drunk: the stone was thought to prevent intoxication."},
+  {n:"Lavender", hex:"#B57EDC", t:2,
+   def:"A light purple with a touch of pink, the color of the flower spikes.",
+   obj:[["Lavender","Lavandula"],["Provence","Provence"]],
+   ev:"Calm, sachets, the grandmotherly.",
+   or:"The plant; Medieval Latin lavendula."},
+  {n:"Lilac", hex:"#C8A2C8", t:3,
+   def:"A pale purple with more pink than lavender; the blossom.",
+   obj:[["Lilac","Syringa vulgaris"]],
+   ev:"Spring, the fleeting, the nostalgic.",
+   or:"Persian līlak, bluish, through Arabic and French."},
+  {n:"Mauve", hex:"#E0B0FF", t:2,
+   def:"A pale purple with gray in it; the first synthetic dye, 1856, and the color of a decade.",
+   obj:[["Mallow flower","Malva"],["Mauveine","Mauveine"]],
+   ev:"Victoriana, the artificial, the faded.",
+   or:"French mauve, mallow; William Perkin's aniline dye made it a craze."},
+  {n:"Heliotrope", hex:"#DF73FF", t:3,
+   def:"A bright pink-purple, named for the flower; magenta softened toward violet.",
+   obj:[["Heliotrope","Heliotropium"]],
+   ev:"Perfume, the hothouse, the fin de siècle.",
+   or:"Greek hēliotropion, sun-turner."},
+  {n:"Orchid", hex:"#DA70D6", t:3,
+   def:"A light pinkish purple, like the flower; brighter than lilac.",
+   obj:[["Orchid","Orchidaceae"]],
+   ev:"The exotic, the cultivated, the delicate.",
+   or:"Greek orkhis, testicle, for the shape of the tubers."},
+  {n:"Wisteria", hex:"#C9A0DC", t:3,
+   def:"A pale, slightly grayish violet, like the hanging blossom.",
+   obj:[["Wisteria","Wisteria"]],
+   ev:"Pergolas, the languid, the Japanese garden.",
+   or:"The vine, named for the anatomist Caspar Wistar."},
+  {n:"Plum", hex:"#8E4585", t:2,
+   def:"A deep purple with red in it, the fruit's skin.",
+   obj:[["Plum","Plum"]],
+   ev:"Ripeness, autumn, the rich.",
+   or:"Latin prunum."},
+  {n:"Aubergine", hex:"#614051", t:2,
+   def:"A very dark purple-brown, the eggplant's skin; plum gone nearly to black.",
+   obj:[["Eggplant","Eggplant"]],
+   ev:"The vegetal dark, the glossy, the elegant.",
+   or:"French, from Catalan albergínia, from Arabic al-bāḏinjān, ultimately Sanskrit vātiṅgaṇa."},
+  {n:"Byzantium", hex:"#702963", t:3,
+   def:"A dark, rich purple with red in it; imperial.",
+   obj:[["Hagia Sophia","Hagia Sophia"],["Byzantine art","Byzantine art"]],
+   ev:"Empire, mosaic, the sacred-political.",
+   or:"The city; the color name is modern."},
+  {n:"Tyrian purple", hex:"#66023C", t:2,
+   def:"A deep reddish purple, the dye of emperors, pressed from sea snails; darker and redder than most purples.",
+   obj:[["Murex snail","Bolinus brandaris"],["Toga","Toga"]],
+   ev:"Imperial Rome, the unobtainable, the ancient.",
+   or:"From Tyre, in modern Lebanon, where the murex dye was made."},
+  {n:"Magenta", hex:"#FF00FF", t:1,
+   def:"A vivid purplish pink with no wavelength of its own; the brain invents it where red meets violet.",
+   obj:[["Fuchsia flower","Fuchsia"],["Bougainvillea","Bougainvillea"],["Printer ink","CMYK color model"]],
+   ev:"The electric, the synthetic, the 1980s.",
+   or:"Named after the Battle of Magenta, 1859, the year the aniline dye was discovered."},
+
+  /* ---------------- neutrals: whites, grays, blacks ---------------- */
+  {n:"Ivory", hex:"#FFFFF0", t:2, neutral:true,
+   def:"A warm, soft white with the faintest yellow; white that has aged gracefully.",
+   obj:[["Ivory","Ivory"],["Piano keys","Piano"]],
+   ev:"Luxury, age, the forbidden.",
+   or:"Latin ebur, through Old French ivurie."},
+  {n:"Alabaster", hex:"#EDEAE0", t:3, neutral:true, approx:true,
+   def:"A soft, faintly translucent white with a hint of warmth; the stone lamps are carved from.",
+   obj:[["Alabaster","Alabaster"]],
+   ev:"Sculpture, pallor, the classical.",
+   or:"Greek alabastros, perhaps from an Egyptian town."},
+  {n:"Bone", hex:"#E3DAC9", t:2, neutral:true,
+   def:"A warm off-white with a gray-yellow cast; whiter than ecru, warmer than chalk.",
+   obj:[["Bone","Bone"],["Bone china","Bone china"]],
+   ev:"Dryness, the elemental, the desert.",
+   or:"Old English bān."},
+  {n:"Eggshell", hex:"#F0EAD6", t:3, neutral:true,
+   def:"A pale off-white with the faintest yellow; also a matte paint finish.",
+   obj:[["Egg","Egg"],["Paint sheen","Paint sheen"]],
+   ev:"Fragility, the domestic, the plain.",
+   or:"Descriptive."},
+  {n:"Silver", hex:"#C0C0C0", t:2, neutral:true,
+   def:"A light, cool gray with implied shine; the metal.",
+   obj:[["Silver","Silver"]],
+   ev:"Moonlight, second place, the precious-cool.",
+   or:"Old English seolfor."},
+  {n:"Ash", hex:"#B2BEB5", t:2, neutral:true,
+   def:"A light gray with a faint blue-green cast, the color of cold ashes.",
+   obj:[["Wood ash","Wood ash"]],
+   ev:"Aftermath, the burnt-out, the cold.",
+   or:"Old English æsce."},
+  {n:"Cinereous", hex:"#98817B", t:3, neutral:true,
+   def:"Ash-gray tinged with brown; an ornithologist's word.",
+   obj:[["Cinereous vulture","Cinereous vulture"]],
+   ev:"Field guides, the dun-feathered, the precise.",
+   or:"Latin cinis, ash."},
+  {n:"Slate", hex:"#708090", t:1, neutral:true,
+   def:"A medium gray with blue in it; the roofing stone.",
+   obj:[["Slate","Slate"]],
+   ev:"Rain, rooftops, the schoolroom.",
+   or:"Old French esclate, splinter."},
+  {n:"Gunmetal", hex:"#2A3439", t:3, neutral:true,
+   def:"A very dark bluish gray, like the oxidized finish on old guns.",
+   obj:[["Bluing on steel","Bluing (steel)"]],
+   ev:"The martial, the cold, the machined.",
+   or:"The gray of the bronze gun-metal alloy, later the blued finish."},
+  {n:"Charcoal", hex:"#36454F", t:1, neutral:true,
+   def:"A very dark gray with a touch of blue; black softened to something you can draw with.",
+   obj:[["Charcoal","Charcoal"]],
+   ev:"The sketch, the burnt, the somber suit.",
+   or:"Middle English charcole; the first element is uncertain."},
+  {n:"Taupe", hex:"#483C32", t:2, neutral:true,
+   def:"A dark grayish brown, the color of a mole's fur; brown with all the warmth wrung out.",
+   obj:[["European mole","European mole"]],
+   ev:"Neutrality, the muted, upholstery.",
+   or:"French taupe, mole, from Latin talpa."},
+  {n:"Jet", hex:"#343434", t:2, neutral:true,
+   def:"A deep, glossy black, from the fossilized wood; the black of Victorian mourning jewelry.",
+   obj:[["Jet","Jet (gemstone)"],["Whitby","Whitby"]],
+   ev:"Mourning, polish, the absolute dark.",
+   or:"Greek gagatēs, from Gagai in Lycia."},
+  {n:"Ebony", hex:"#555D50", t:3, neutral:true,
+   def:"A very dark brownish black, like the dense hardwood; not pure black, but nearly.",
+   obj:[["Ebony","Ebony"]],
+   ev:"Piano keys, the luxurious dark, the tropical.",
+   or:"Greek ebenos, from Egyptian hbny."},
+  {n:"Onyx", hex:"#353839", t:3, neutral:true,
+   def:"A deep black with a cool, stony gloss.",
+   obj:[["Onyx","Onyx"]],
+   ev:"Hardness, the ornamental dark.",
+   or:"Greek onyx, fingernail, for the stone's banding."},
+  {n:"Sable", hex:"#1C1611", t:3, neutral:true, approx:true,
+   def:"The heraldic word for black; in fur, a dark brown so deep it reads as black.",
+   obj:[["Sable","Sable"],["Heraldic tincture","Tincture (heraldry)"]],
+   ev:"Heraldry, luxury, funerary pomp.",
+   or:"The marten's fur, through Old French; a heraldic term since the Middle Ages."},
+  {n:"Fuliginous", hex:"#3B3230", t:3, neutral:true, approx:true,
+   def:"Sooty, smoky, dark; a word for the color of smoke-stained things.",
+   obj:[["Soot","Soot"],["Coal","Coal"]],
+   ev:"Industry, Dickens, the grimy.",
+   or:"Latin fuligo, soot."}
+];
+
+/* The fixed headers above the spectrum: [name, HSL hue]. */
+const HEADERS = [["Red",0],["Orange",30],["Yellow",60],["Green",120],["Cyan",180],["Blue",240],["Violet",270],["Magenta",300]];
+
+/* ==========================================================================
+   APP — nothing below needs editing to add words.
+   ========================================================================== */
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function el(tag, cls, html){ const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+/* ---------- color math ---------- */
+function hexToRgb(hex){ const n = parseInt(hex.replace('#',''), 16); return [(n>>16)&255, (n>>8)&255, n&255]; }
+function hslHue(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max-min;
+  if (d === 0) return 0;
+  let h = max === r ? ((g-b)/d) % 6 : max === g ? (b-r)/d + 2 : (r-g)/d + 4;
+  h *= 60; return h < 0 ? h + 360 : h;
+}
+function hslToRgb(h,s,l){
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2*l - 1)) * s, x = c * (1 - Math.abs((h/60) % 2 - 1)), m = l - c/2;
+  let r,g,b;
+  if (h < 60) [r,g,b] = [c,x,0]; else if (h < 120) [r,g,b] = [x,c,0]; else if (h < 180) [r,g,b] = [0,c,x];
+  else if (h < 240) [r,g,b] = [0,x,c]; else if (h < 300) [r,g,b] = [x,0,c]; else [r,g,b] = [c,0,x];
+  return [Math.round((r+m)*255), Math.round((g+m)*255), Math.round((b+m)*255)];
+}
+const lin = c => { c /= 255; return c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+/* OKLab: a perceptual space, so "lighter" here means lighter to the eye,
+   which HSL's L famously is not (pure yellow and pure blue both sit at 50%). */
+function oklab(r,g,b){
+  const R = lin(r), G = lin(g), B = lin(b);
+  const l = Math.cbrt(0.4122214708*R + 0.5363325363*G + 0.0514459929*B);
+  const m = Math.cbrt(0.2119034982*R + 0.6806995451*G + 0.1073969566*B);
+  const s = Math.cbrt(0.0883024619*R + 0.2817188376*G + 0.6299787005*B);
+  return { L: 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+           a: 1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+           b: 0.0259040371*l + 0.7827717662*m - 0.8086757660*s };
+}
+function withAlpha(hex, a){ const [r,g,b] = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+
+/* ---------- hue → horizontal position ----------
+   The hue circle has to be cut somewhere to become a strip. It is cut at 320°,
+   in the empty stretch between aubergine and rose, so the reds and pinks stay
+   together on the left and the purples run out to magenta on the right.
+   The mapping is piecewise so the crowded warm hues get more room. */
+const H_LO = -40, H_HI = 320;
+const ANCH = [[-40,0],[0,.10],[30,.21],[60,.31],[90,.38],[120,.45],[180,.57],[240,.71],[270,.81],[300,.92],[320,1]];
+function normHue(h){ h = ((h % 360) + 360) % 360; return h >= H_HI ? h - 360 : h; }
+function hueToX(h){
+  h = normHue(h);
+  for (let i = 1; i < ANCH.length; i++){
+    const [a,xa] = ANCH[i-1], [b,xb] = ANCH[i];
+    if (h <= b) return xa + (h-a)/(b-a)*(xb-xa);
+  }
+  return 1;
+}
+function xToHue(x){
+  x = clamp(x, 0, 1);
+  for (let i = 1; i < ANCH.length; i++){
+    const [a,xa] = ANCH[i-1], [b,xb] = ANCH[i];
+    if (x <= xb) return a + (x-xa)/(xb-xa)*(b-a);
+  }
+  return H_HI;
+}
+
+/* ---------- world geometry ---------- */
+const W = 1600;                       // spectrum width, world units
+const STRIP_X = W + 120, STRIP_W = 56; // the neutral strip, right of the spectrum
+const WORLD_W = STRIP_X + STRIP_W;
+const V = 720;                        // world units per 1.0 of OKLab lightness
+const BAND_H = 56;                    // band height on screen, constant
+const HDR_H = 48;                     // header row, kept clear of labels
+const NEUTRAL_C = 0.035;              // OKLCH chroma below this is "gray" unless overridden
+
+const bandLCache = new Map();
+function bandL(h){
+  const k = Math.round(h);
+  if (!bandLCache.has(k)){ const [r,g,b] = hslToRgb(k,1,.5); bandLCache.set(k, oklab(r,g,b).L); }
+  return bandLCache.get(k);
+}
+
+/* ---------- derive every word from its hex ---------- */
+const HDRS = HEADERS.map(([n,h]) => ({n, h}));
+function nearestHeaders(h){
+  return HDRS.map(x => { let d = Math.abs(((x.h - h) % 360 + 540) % 360 - 180); return {n:x.n, d}; })
+             .sort((a,b) => a.d - b.d);
+}
+function towardName(fromHue, sign){
+  let best = null;
+  for (const x of HDRS){
+    const d = ((x.h - fromHue) * sign + 360) % 360;
+    if (d > 4 && (!best || d < best.d)) best = {n:x.n, d};
+  }
+  return best ? best.n.toLowerCase() : '';
+}
+function lightWord(dL){
+  if (dL > 0.20) return 'pale tint'; if (dL > 0.06) return 'light tint';
+  if (dL < -0.20) return 'deep shade'; if (dL < -0.06) return 'shade';
+  return 'mid-lightness';
+}
+function chromaWord(C){ return C > 0.17 ? 'vivid' : C < 0.09 ? 'muted' : ''; }
+
+WORDS.forEach((w, i) => {
+  w.id = i;
+  const [r,g,b] = hexToRgb(w.hex);
+  const lab = oklab(r,g,b);
+  w.L = lab.L; w.a = lab.a; w.b = lab.b; w.C = Math.hypot(lab.a, lab.b);
+  w.hue = hslHue(r,g,b);
+  w.isNeutral = w.neutral === true || (w.neutral !== false && w.C < NEUTRAL_C);
+  w.tags = w.tags || [];
+  if (w.isNeutral){
+    // warm grays drift right on the strip, cool grays left
+    w.x = STRIP_X + STRIP_W * (0.5 + clamp(lab.b * 10, -0.42, 0.42));
+    w.y = -(w.L - 0.5) * V;
+    w.dL = 0;
+    const tone = w.L > 0.85 ? 'white' : w.L < 0.35 ? 'black' : 'gray';
+    const temp = lab.b > 0.004 || lab.a > 0.006 ? 'warm ' : lab.b < -0.004 ? 'cool ' : '';
+    w.family = 'Neutral'; w.desc = temp + tone;
+    w.eyebrow = ['Neutral', temp + tone].join(' · ');
+  } else {
+    w.x = hueToX(w.hue) * W;
+    w.dL = w.L - bandL(w.hue);
+    w.y = -w.dL * V;
+    const near = nearestHeaders(w.hue);
+    w.family = near[0].n;
+    const lean = near[0].d > 9 ? 'leaning ' + near[1].n.toLowerCase() : '';
+    w.desc = [w.family.toLowerCase(), lean, lightWord(w.dL), chromaWord(w.C)].filter(Boolean).join(', ');
+    w.eyebrow = [w.family, lean, lightWord(w.dL), chromaWord(w.C)].filter(Boolean).join(' · ');
+  }
+});
+
+/* nearest neighbors in OKLab, with a plain-words relation for each */
+function relation(a, b){
+  const out = [];
+  const dL = b.L - a.L;
+  if (dL > 0.05) out.push('paler'); else if (dL < -0.05) out.push('deeper');
+  const dC = b.C - a.C;
+  if (dC > 0.03) out.push('more vivid'); else if (dC < -0.03) out.push('more muted');
+  if (!a.isNeutral && !b.isNeutral){
+    let dh = ((b.hue - a.hue) % 360 + 540) % 360 - 180;
+    if (Math.abs(dh) > 6){ const t = towardName(a.hue, Math.sign(dh)); if (t) out.push('toward ' + t); }
+  }
+  return out.length ? out.join(' · ') : 'very close';
+}
+WORDS.forEach(w => {
+  w.near = WORDS.filter(o => o !== w)
+    .map(o => ({ w:o, d: Math.hypot(o.L - w.L, o.a - w.a, o.b - w.b) }))
+    .sort((p,q) => p.d - q.d).slice(0, 3).map(p => p.w);
+});
+
+/* ---------- DOM ---------- */
+const stage = $('#stage'), canvas = $('#band'), ctx = canvas.getContext('2d');
+const layer = $('#layer'), headersEl = $('#headers');
+const view = { s: 1, tx: 0, ty: 0 };
+let fitScale = 1, showAll = false, hypOnly = false;
+let pinned = null, hovered = null, hits = new Set(), searching = false;
+
+const hdrEls = HDRS.map(h => { const e = el('div', 'hdr', esc(h.n)); headersEl.append(e); return {e, x: hueToX(h.h) * W}; });
+hdrEls.push({ e: (() => { const e = el('div','hdr','Neutrals'); headersEl.append(e); return e; })(), x: STRIP_X + STRIP_W/2 });
+
+WORDS.slice().sort((a,b) => a.x - b.x || a.y - b.y).forEach(w => {
+  const dot = el('span', 'dot' + (w.isNeutral ? ' neutral' : ''));
+  dot.style.setProperty('--c', w.hex); dot.title = w.n; dot.dataset.id = w.id;
+  const lbl = el('button', 'lbl t' + w.t, '<span class="sw" aria-hidden="true"></span>' + esc(w.n));
+  lbl.type = 'button'; lbl.style.setProperty('--c', w.hex); lbl.dataset.id = w.id;
+  lbl.setAttribute('aria-label', w.n + ': ' + w.desc);
+  lbl.setAttribute('aria-pressed', 'false');
+  layer.append(dot, lbl);
+  w.dotEl = dot; w.lblEl = lbl; w.pos = 'r';
+});
+function measure(){ WORDS.forEach(w => { w.lw = w.lblEl.offsetWidth; w.lh = w.lblEl.offsetHeight; }); }
+measure();
+
+/* ---------- rendering ---------- */
+let raf = 0;
+function requestRender(){ if (!raf) raf = requestAnimationFrame(render); }
+function stageSize(){ return { w: stage.clientWidth, h: stage.clientHeight }; }
+
+function fitView(){
+  const {w,h} = stageSize();
+  fitScale = Math.max(0.05, (w - 56) / WORLD_W);
+  view.s = fitScale; view.tx = 28; view.ty = Math.round(h * 0.54);
+  requestRender();
+}
+
+function labelRect(w, pos){
+  const g = 7;
+  switch (pos){
+    case 'l': return { x: w.sx - g - w.lw, y: w.sy - w.lh/2, w: w.lw, h: w.lh };
+    case 'a': return { x: w.sx - w.lw/2, y: w.sy - g - w.lh, w: w.lw, h: w.lh };
+    case 'b': return { x: w.sx - w.lw/2, y: w.sy + g, w: w.lw, h: w.lh };
+    default:  return { x: w.sx + g, y: w.sy - w.lh/2, w: w.lw, h: w.lh };
+  }
+}
+function positionLabel(w){ const r = labelRect(w, w.pos); w.lblEl.style.transform = `translate(${r.x}px,${r.y}px)`; }
+
+function render(){
+  raf = 0;
+  const {w,h} = stageSize();
+  drawBand(w, h);
+  // headers slide with the map; when two would overlap, the one to the right yields
+  let lastRight = -Infinity;
+  hdrEls.forEach(hd => {
+    const x = hd.x * view.s + view.tx;
+    hd.w = hd.w || hd.e.offsetWidth; const half = hd.w / 2;
+    hd.e.style.left = x + 'px';
+    const vis = x + half > 0 && x - half < w && x - half > lastRight + 10;
+    hd.e.style.opacity = vis ? '1' : '0';
+    if (vis) lastRight = x + half;
+  });
+  WORDS.forEach(wd => {
+    wd.sx = wd.x * view.s + view.tx; wd.sy = wd.y * view.s + view.ty;
+    wd.dotEl.style.transform = `translate(${wd.sx}px,${wd.sy}px)`;
+    positionLabel(wd);
+  });
+  scheduleCollide();
+}
+
+let off = null;
+function drawBand(w, h){
+  const dpr = window.devicePixelRatio || 1;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  if (canvas.width !== pw || canvas.height !== ph){ canvas.width = pw; canvas.height = ph; canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0D1117';
+  const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#262C36';
+  const yb = view.ty;
+  const halo = 0.5 * V * view.s;
+
+  // the spectrum band and its faint halo (paler above, deeper below)
+  const x0 = Math.max(0, view.tx), x1 = Math.min(w, W * view.s + view.tx);
+  const cols = Math.ceil(x1 - x0);
+  if (cols > 0){
+    if (!off) off = document.createElement('canvas');
+    off.width = cols; off.height = 1;
+    const img = off.getContext('2d').createImageData(cols, 1);
+    for (let i = 0; i < cols; i++){
+      const hue = xToHue(((x0 + i) - view.tx) / view.s / W);
+      const [r,g,b] = hslToRgb(hue, 1, .5);
+      img.data[i*4] = r; img.data[i*4+1] = g; img.data[i*4+2] = b; img.data[i*4+3] = 255;
+    }
+    off.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = 0.17;
+    ctx.drawImage(off, 0, 0, cols, 1, x0, yb - halo, cols, 2 * halo);
+    ctx.globalAlpha = 1;
+    const fade = ctx.createLinearGradient(0, yb - halo, 0, yb + halo);
+    fade.addColorStop(0, bg); fade.addColorStop(0.44, withAlpha(bg, 0)); fade.addColorStop(0.56, withAlpha(bg, 0)); fade.addColorStop(1, bg);
+    ctx.fillStyle = fade; ctx.fillRect(x0, yb - halo, cols, 2 * halo);
+    // whiten the tint side a little, darken the shade side, so the axis reads without labels
+    const tint = ctx.createLinearGradient(0, yb - halo, 0, yb); tint.addColorStop(0, 'rgba(255,255,255,0.10)'); tint.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = tint; ctx.fillRect(x0, yb - halo, cols, halo);
+    const shade = ctx.createLinearGradient(0, yb, 0, yb + halo); shade.addColorStop(0, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,0.22)');
+    ctx.fillStyle = shade; ctx.fillRect(x0, yb, cols, halo);
+    ctx.drawImage(off, 0, 0, cols, 1, x0, yb - BAND_H/2, cols, BAND_H);
+  }
+
+  // the neutral strip: white at the top, black at the bottom
+  const sx = STRIP_X * view.s + view.tx, sw = STRIP_W * view.s;
+  if (sx < w && sx + sw > 0){
+    const top = yb - halo, bot = yb + halo;
+    const g2 = ctx.createLinearGradient(0, top, 0, bot); g2.addColorStop(0, '#FFFFFF'); g2.addColorStop(1, '#000000');
+    ctx.fillStyle = g2;
+    ctx.beginPath(); ctx.roundRect(sx, top, sw, bot - top, Math.min(8, sw/3)); ctx.fill();
+    ctx.strokeStyle = border; ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+
+/* ---------- label placement: tier gates, then greedy collision ---------- */
+let collideTimer = 0;
+function scheduleCollide(){ clearTimeout(collideTimer); collideTimer = setTimeout(collide, 70); }
+const overlap = (a, b, pad) => a.x < b.x + b.w + pad && a.x + a.w + pad > b.x && a.y < b.y + b.h + pad && a.y + a.h + pad > b.y;
+const forced = w => (w === pinned || hits.has(w)) ? 1 : 0;
+function show(w){ w.lblEl.classList.remove('hidden'); w.lblEl.tabIndex = 0; }
+function hide(w){ w.lblEl.classList.add('hidden'); w.lblEl.tabIndex = -1; }
+
+function collide(){
+  const {w,h} = stageSize();
+  const zoom = view.s / fitScale;
+  const placed = [];
+  const order = WORDS.slice().sort((a,b) => (forced(b) - forced(a)) || (a.t - b.t) || (b.C - a.C));
+  for (const wd of order){
+    const onscreen = wd.sx > -240 && wd.sx < w + 240 && wd.sy > -120 && wd.sy < h + 120;
+    const gate = forced(wd) || showAll || wd.t === 1 || (wd.t === 2 && zoom >= 1.15) || (wd.t === 3 && zoom >= 1.9);
+    const filtered = hypOnly && !wd.tags.includes('hyperion');
+    if (!onscreen || !gate || filtered){ hide(wd); continue; }
+    if (showAll && !forced(wd)){ show(wd); placed.push(labelRect(wd, wd.pos)); continue; }
+    let ok = false;
+    for (const p of ['r','l','b','a']){
+      const r = labelRect(wd, p);
+      if (r.y < HDR_H + 6) continue;
+      if (placed.some(q => overlap(r, q, 3))) continue;
+      wd.pos = p; ok = true; placed.push(r); break;
+    }
+    if (ok) show(wd); else hide(wd);
+  }
+  WORDS.forEach(positionLabel);
+}
+
+/* ---------- pan and zoom ---------- */
+function zoomAt(mx, my, k){
+  const ns = clamp(view.s * k, fitScale * 0.5, fitScale * 40);
+  k = ns / view.s;
+  view.tx = mx - (mx - view.tx) * k; view.ty = my - (my - view.ty) * k; view.s = ns;
+  requestRender();
+}
+function jumpTo(wd){
+  const {w,h} = stageSize();
+  const s = Math.max(view.s, fitScale * 2.6);
+  view.s = s; view.tx = w/2 - wd.x * s; view.ty = h/2 - wd.y * s;
+  requestRender();
+}
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (e.shiftKey){ view.tx -= (e.deltaY || e.deltaX); requestRender(); return; }
+  const k = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.06 : e.ctrlKey ? 0.012 : 0.0022));
+  zoomAt(mx, my, k);
+}, { passive: false });
+
+const pointers = new Map();
+let drag = null, pinch = null, suppressClickUntil = 0;
+const dist = (a,b) => Math.hypot(a.x - b.x, a.y - b.y), mid = (a,b) => ({ x: (a.x+b.x)/2, y: (a.y+b.y)/2 });
+stage.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1){ drag = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty, moved: false }; }
+  else if (pointers.size === 2){
+    drag = null; const [p1,p2] = [...pointers.values()];
+    pinch = { d: dist(p1,p2), s: view.s, mid: mid(p1,p2), tx: view.tx, ty: view.ty };
+  }
+});
+window.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pointers.size === 2){
+    const [p1,p2] = [...pointers.values()], r = stage.getBoundingClientRect(), m = mid(p1,p2);
+    const ns = clamp(pinch.s * dist(p1,p2) / pinch.d, fitScale * 0.5, fitScale * 40), k = ns / pinch.s;
+    view.s = ns;
+    view.tx = (m.x - r.left) - ((pinch.mid.x - r.left) - pinch.tx) * k;
+    view.ty = (m.y - r.top) - ((pinch.mid.y - r.top) - pinch.ty) * k;
+    requestRender(); return;
+  }
+  if (drag){
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx,dy) > 4){ drag.moved = true; stage.classList.add('dragging'); }
+    if (drag.moved){ view.tx = drag.tx + dx; view.ty = drag.ty + dy; requestRender(); }
+  }
+});
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if (drag && drag.moved) suppressClickUntil = performance.now() + 250;
+  drag = null; pinch = null; stage.classList.remove('dragging');
+}
+window.addEventListener('pointerup', endPointer);
+window.addEventListener('pointercancel', endPointer);
+
+stage.addEventListener('keydown', e => {
+  if (e.target !== stage) return;
+  const {w,h} = stageSize(), step = 80;
+  switch (e.key){
+    case 'ArrowLeft': view.tx += step; break;
+    case 'ArrowRight': view.tx -= step; break;
+    case 'ArrowUp': view.ty += step; break;
+    case 'ArrowDown': view.ty -= step; break;
+    case '+': case '=': zoomAt(w/2, h/2, 1.3); e.preventDefault(); return;
+    case '-': case '_': zoomAt(w/2, h/2, 1/1.3); e.preventDefault(); return;
+    case '0': fitView(); e.preventDefault(); return;
+    default: return;
+  }
+  e.preventDefault(); requestRender();
+});
+$('#zoomIn').addEventListener('click', () => { const {w,h} = stageSize(); zoomAt(w/2, h/2, 1.3); });
+$('#zoomOut').addEventListener('click', () => { const {w,h} = stageSize(); zoomAt(w/2, h/2, 1/1.3); });
+$('#resetBtn').addEventListener('click', fitView);
+/* a small resize just redraws; a big one (phone rotation, panel collapse) refits */
+let lastW = 0;
+new ResizeObserver(() => {
+  const w = stage.clientWidth;
+  if (lastW && Math.abs(w - lastW) / lastW > 0.3) fitView(); else requestRender();
+  lastW = w;
+}).observe(stage);
+
+/* ---------- the detail panel ---------- */
+const panel = $('#panelBody');
+const wikiCache = new Map();
+function lsGet(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+
+/* Lead photo of a Wikipedia article, by title. Cached in memory and, for a
+   month, in localStorage, so the second look at a word is instant. */
+function wikiImage(title){
+  if (wikiCache.has(title)) return Promise.resolve(wikiCache.get(title));
+  const key = 'cw:wiki:' + title, cached = lsGet(key);
+  if (cached && cached.ts && Date.now() - cached.ts < 30 * 864e5){ wikiCache.set(title, cached); return Promise.resolve(cached); }
+  const url = 'https://en.wikipedia.org/w/api.php?action=query&prop=pageimages%7Cdescription&piprop=thumbnail'
+            + '&pithumbsize=720&redirects=1&format=json&formatversion=2&origin=*&titles=' + encodeURIComponent(title);
+  const p = fetch(url)
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(d => {
+      const page = d && d.query && d.query.pages && d.query.pages[0];
+      const res = { ts: Date.now(), title: (page && page.title) || title, missing: !page || !!page.missing,
+                    src: page && page.thumbnail ? page.thumbnail.source : null, desc: (page && page.description) || '' };
+      lsSet(key, res); wikiCache.set(title, res); return res;
+    })
+    .catch(err => { wikiCache.delete(title); throw err; });
+  wikiCache.set(title, p);
+  return p;
+}
+
+function renderDefault(){
+  const approx = WORDS.filter(w => w.approx).length;
+  panel.innerHTML = `
+    <div class="legend">
+      <div class="eyebrow">Reading the map</div>
+      <h2>Color words, by where they live</h2>
+      <p><strong>Left to right is hue.</strong> Red through orange, yellow, green, blue and violet, then out to magenta. The circle is cut between aubergine and rose, so the pinks sit beside the reds.</p>
+      <p><strong>Up and down is lightness.</strong> A word on the band is its hue at full strength. Above the band are the tints (peach, celadon, periwinkle). Below it are the shades (burgundy, umber, navy). The strip on the right holds the whites, grays and blacks.</p>
+      <p><strong>Muted words</strong> like ochre, sage and glaucous sit at their hue, but their swatch is grayer than the band behind them. That gap is the word.</p>
+      <p>Hover a word to preview it here. <strong>Click to pin</strong> it; <kbd>Esc</kbd> unpins. Scroll to zoom, drag to pan, <kbd>Shift</kbd> + scroll slides sideways. Zoom in and more words appear.</p>
+      <p class="stat">${WORDS.length} words · ${approx} with approximate swatches · photos from Wikipedia, fetched when you look</p>
+    </div>`;
+}
+
+let photoReq = 0;
+function renderWord(w){
+  const fam = w.family.toLowerCase();
+  const where = w.isNeutral ? 'On the neutral strip'
+    : w.dL > 0.06 ? 'Above the band: paler than pure ' + fam
+    : w.dL < -0.06 ? 'Below the band: deeper than pure ' + fam
+    : 'On the band: as light as pure ' + fam;
+  const lch = 'L ' + Math.round(w.L * 100) + ' · C ' + w.C.toFixed(2) + (w.isNeutral ? '' : ' · hue ' + Math.round(w.hue) + '°');
+  const chips = w.obj.map((o, i) => `<button type="button" class="chip" data-obj="${i}" aria-pressed="${i === 0 ? 'true' : 'false'}">${esc(o[0])}</button>`).join('');
+  const nb = w.near.map(o => `<li><button type="button" data-jump="${o.id}"><span class="sq" style="--c:${o.hex}" aria-hidden="true"></span><span>${esc(o.n)}</span><span class="rel">${esc(relation(w, o))}</span></button></li>`).join('');
+  const tags = w.tags.map(t => `<span class="badge">${esc(t)}</span>`).join('') + (w.found ? `<span class="cap">${esc(w.found)}</span>` : '');
+  panel.innerHTML = `
+    <div class="eyebrow">${esc(w.eyebrow)}</div>
+    <h2>${esc(w.n)}</h2>
+    <div class="swatch" style="--c:${w.hex}"><code>${w.hex}</code></div>
+    <div class="meta"><span>${esc(where)}</span><span class="lch">${esc(lch)}</span></div>
+    ${w.approx ? '<div class="approx">No conventional value exists for this word, so the swatch is a considered guess. Correct it in the file if you find a better one.</div>' : ''}
+    <p class="def">${esc(w.def)}</p>
+    <div class="sec">
+      <div class="sec-h">Looks like</div>
+      <div class="chips">${chips}</div>
+      <div class="photo" id="photo">Loading photo…</div>
+      <div class="cap" id="cap"></div>
+    </div>
+    <div class="sec"><div class="sec-h">Evokes</div><p>${esc(w.ev)}</p></div>
+    <div class="sec"><div class="sec-h">Origin</div><p>${esc(w.or)}</p></div>
+    <div class="sec"><div class="sec-h">Nearest neighbors</div><ul class="nb">${nb}</ul></div>
+    ${tags ? `<div class="tags">${tags}</div>` : ''}`;
+  panel.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => { const o = WORDS[+b.dataset.jump]; jumpTo(o); pin(o); }));
+  panel.querySelectorAll('[data-obj]').forEach(b => b.addEventListener('click', () => {
+    panel.querySelectorAll('[data-obj]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true'); loadPhoto(w, +b.dataset.obj);
+  }));
+  loadPhoto(w, 0);
+}
+
+async function loadPhoto(w, i){
+  const req = ++photoReq;
+  const box = $('#photo'), cap = $('#cap');
+  if (!box) return;
+  box.classList.remove('loaded'); box.textContent = 'Loading photo…'; cap.textContent = '';
+  const order = [i].concat(w.obj.map((_, k) => k).filter(k => k !== i));
+  for (const k of order){
+    const [label, title] = w.obj[k];
+    let res;
+    try { res = await wikiImage(title); } catch (err) { res = null; }
+    if (req !== photoReq) return;
+    if (!res || !res.src) continue;
+    const img = new Image();
+    img.alt = label + ', photo from Wikipedia';
+    img.onload = () => { if (req !== photoReq) return; box.textContent = ''; box.append(img); box.classList.add('loaded'); };
+    img.onerror = () => { if (req === photoReq) box.textContent = 'The photo did not load.'; };
+    img.src = res.src;
+    const href = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(res.title.replace(/ /g, '_'));
+    const note = k !== i ? `No photo on the ${esc(w.obj[i][0])} article, so this is ` : '';
+    cap.innerHTML = `${note}${esc(label)}${res.desc ? ' · ' + esc(res.desc) : ''} · <a href="${href}" target="_blank" rel="noopener">Wikipedia</a>`;
+    return;
+  }
+  box.textContent = navigator.onLine === false
+    ? 'Offline. Photos come from Wikipedia and need a connection.'
+    : 'No photo found on Wikipedia for these objects.';
+}
+
+/* ---------- hover previews, click pins ---------- */
+function updatePanel(){ const w = hovered || pinned; if (w) renderWord(w); else renderDefault(); }
+let hoverTimer = 0;
+function setHovered(w){
+  clearTimeout(hoverTimer);
+  hoverTimer = setTimeout(() => { if (hovered !== w){ hovered = w; updatePanel(); } }, 110);
+}
+function pin(w){
+  if (pinned){ pinned.lblEl.classList.remove('pinned'); pinned.lblEl.setAttribute('aria-pressed', 'false'); }
+  pinned = w;
+  if (w){ w.lblEl.classList.add('pinned'); w.lblEl.setAttribute('aria-pressed', 'true'); }
+  hovered = null; updatePanel(); scheduleCollide();
+}
+layer.addEventListener('pointerover', e => { const t = e.target.closest('[data-id]'); if (t) setHovered(WORDS[+t.dataset.id]); });
+/* A preview lingers after the pointer leaves, so the panel can be used. When a
+   word is pinned, leaving the map returns the panel to it. */
+stage.addEventListener('pointerleave', () => { if (pinned && hovered){ clearTimeout(hoverTimer); hovered = null; updatePanel(); } });
+layer.addEventListener('focusin', e => { const t = e.target.closest('.lbl'); if (t){ clearTimeout(hoverTimer); hovered = WORDS[+t.dataset.id]; updatePanel(); } });
+layer.addEventListener('click', e => {
+  if (performance.now() < suppressClickUntil) return;
+  const t = e.target.closest('.lbl'); if (!t) return;
+  const w = WORDS[+t.dataset.id];
+  pin(pinned === w ? null : w);
+});
+stage.addEventListener('click', e => {
+  if (performance.now() < suppressClickUntil) return;
+  if (!e.target.closest('.lbl, .dot, .zoomctl')) pin(null);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.activeElement !== $('#q')){ pin(null); }
+});
+
+/* ---------- search, filters ---------- */
+const q = $('#q'), qCount = $('#qCount');
+function applyDim(){
+  WORDS.forEach(w => {
+    const dim = (searching && !hits.has(w)) || (hypOnly && !w.tags.includes('hyperion'));
+    w.lblEl.classList.toggle('dim', dim); w.dotEl.classList.toggle('dim', dim);
+    w.lblEl.classList.toggle('hit', hits.has(w));
+  });
+}
+function runSearch(){
+  const term = q.value.trim().toLowerCase();
+  hits = new Set(); searching = !!term;
+  if (term) WORDS.forEach(w => {
+    if (w.n.toLowerCase().includes(term) || w.def.toLowerCase().includes(term) || w.ev.toLowerCase().includes(term)
+        || w.family.toLowerCase() === term || w.tags.includes(term)) hits.add(w);
+  });
+  qCount.textContent = searching ? hits.size + (hits.size === 1 ? ' hit' : ' hits') : '';
+  applyDim(); scheduleCollide();
+}
+q.addEventListener('input', runSearch);
+q.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){ q.value = ''; runSearch(); stage.focus(); e.preventDefault(); }
+  if (e.key === 'Enter'){
+    const term = q.value.trim().toLowerCase();
+    const ranked = WORDS.filter(w => hits.has(w)).sort((a, b) => {
+      const ia = a.n.toLowerCase().indexOf(term), ib = b.n.toLowerCase().indexOf(term);
+      return (ia < 0) - (ib < 0) || ia - ib || a.n.localeCompare(b.n);
+    });
+    if (ranked[0]){ jumpTo(ranked[0]); pin(ranked[0]); }
+    e.preventDefault();
+  }
+});
+const allBtn = $('#allBtn');
+allBtn.addEventListener('click', () => { showAll = !showAll; allBtn.setAttribute('aria-pressed', String(showAll)); scheduleCollide(); });
+const hypBtn = $('#hypBtn');
+hypBtn.hidden = !WORDS.some(w => w.tags.includes('hyperion'));
+hypBtn.addEventListener('click', () => { hypOnly = !hypOnly; hypBtn.setAttribute('aria-pressed', String(hypOnly)); applyDim(); scheduleCollide(); });
+
+/* ---------- theme ---------- */
+const root = document.documentElement, themeBtn = $('#themeBtn'), themeIcon = $('#themeIcon');
+const SUN = '<circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>';
+const MOON = '<path d="M20 13.2A8.2 8.2 0 0 1 10.8 4a8.4 8.4 0 1 0 9.2 9.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>';
+function applyTheme(t){
+  root.setAttribute('data-theme', t);
+  const dark = t === 'dark';
+  themeBtn.setAttribute('aria-pressed', String(dark));
+  themeBtn.querySelector('.sr-only').textContent = dark ? 'Dark theme' : 'Light theme';
+  themeIcon.innerHTML = dark ? MOON : SUN;
+  lsSet('cw:theme', t); requestRender();
+}
+themeBtn.addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+const savedTheme = lsGet('cw:theme');
+if (savedTheme === 'light' || savedTheme === 'dark') applyTheme(savedTheme);
+
+/* ---------- boot ---------- */
+$('#countPill').textContent = WORDS.length + ' words';
+renderDefault();
+fitView();
+window.chromatic = { words: WORDS, view, fit: fitView, jump: jumpTo, pin };
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); requestRender(); });
+window.addEventListener('load', () => { measure(); requestRender(); });
+})();
+</script>
+</body>
+</html>
