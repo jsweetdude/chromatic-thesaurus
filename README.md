@@ -23,7 +23,7 @@ The `WORDS` array at the top of the script in `index.html` is the data. One obje
 | `hex` | the swatch; position on the map is computed from it |
 | `t` | tier: 1 shows at the widest zoom, 2 appears sooner, 3 only close in |
 | `def` | one sentence: what the color is and how it differs from its neighbors |
-| `obj` | real things of this color, as `[label, Wikipedia article title]` pairs; the first is the default photo |
+| `obj` | real things of this color, as `[label, Wikipedia article title]` pairs, or `[label, article, "File:name.jpg"]` to pin a specific photo from that article; the first object is the default photo |
 | `ev` | what the color evokes |
 | `or` | where the word comes from |
 | `approx` | `true` when no conventional value exists and the swatch is a best guess |

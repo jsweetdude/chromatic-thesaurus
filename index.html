@@ -273,8 +273,12 @@
            common web conventions (Wikipedia / X11) where one exists.
      t     tier: 1 shows at the widest zoom, 2 appears sooner, 3 only close in
      def   one sentence: what the color is and how it differs from its neighbors
-     obj   real things that are this color: [label, Wikipedia article title].
-           The card fetches the article's lead photo. The first is the default.
+     obj   real things that are this color: [label, Wikipedia article title]
+           or [label, article, "File:name.jpg"] to pin a specific photo from
+           that article. Without a pin the card shows the article's lead image.
+           The first object is the default. Pins come from the photo audit in
+           the Chromatic-Thesaurus project folder, which scores every image on
+           the article by how much of the word's color it contains.
      ev    what the color evokes on the page
      or    where the word comes from
      approx  true when no conventional value exists and the swatch is a best guess
@@ -291,27 +295,27 @@ const WORDS = [
    or:"From scarlata, a fine medieval cloth (probably Persian saqirlāt); the dyed fabric gave its name to the color."},
   {n:"Vermilion", hex:"#E34234", t:1,
    def:"A fiery red-orange, the color of ground cinnabar; hotter than scarlet and with none of crimson's blue.",
-   obj:[["Torii gate","Torii"],["Cinnabar","Cinnabar"],["Red lacquerware","Lacquerware"]],
+   obj:[["Torii gate","Torii","File:Fushimi Inari1.JPG"],["Cinnabar","Cinnabar"],["Red lacquerware","Lacquerware","File:Box with two phoenix birds and chrysanthemums, China, Ming dynasty, Yongle period, 1403-1424 AD, lacquer - Östasiatiska museet, Stockholm - DSC09540.JPG"]],
    ev:"Heat, ceremony, sacred thresholds.",
    or:"Latin vermiculus, little worm: the kermes insect used for red dye lent its name to the pigment."},
   {n:"Crimson", hex:"#DC143C", t:1,
    def:"A deep, rich red that leans toward blue and purple; scarlet's serious older sibling.",
-   obj:[["Pomegranate","Pomegranate"],["Red velvet","Velvet"],["Kermes insect","Kermes (dye)"]],
+   obj:[["Pomegranate","Pomegranate"],["Red velvet","Velvet","File:Morris and Co Acorn embossed velvet 1912.jpg"],["Kermes insect","Kermes (dye)","File:Kermes - Neve Tzuf.jpg"]],
    ev:"Passion, royalty, blood; rich rather than alarming.",
    or:"From kermes, the insect dye, through Arabic qirmiz and Old Spanish cremesín."},
   {n:"Carmine", hex:"#960018", t:2,
    def:"A deep, slightly purplish red made from cochineal; darker and more solemn than crimson.",
-   obj:[["Cochineal","Cochineal"],["Carmine pigment","Carmine"],["Lipstick","Lipstick"]],
+   obj:[["Cochineal","Cochineal","File:Slit tapestry shirt fragment, Peru, Chancay, central coast, c. 1000-1470 AD, alpaca wool dyed with saffron, cochineal, and indigo - Krannert Art Museum, UIUC - DSC06400.jpg"],["Carmine pigment","Carmine","File:Slit tapestry shirt fragment, Peru, Chancay, central coast, c. 1000-1470 AD, alpaca wool dyed with saffron, cochineal, and indigo - Krannert Art Museum, UIUC - DSC06400.jpg"],["Lipstick","Lipstick"]],
    ev:"Luxury, devotion, the theatrical.",
    or:"Medieval Latin carminium, blending Arabic qirmiz (kermes) with Latin minium (red lead)."},
   {n:"Cardinal", hex:"#C41E3A", t:3,
    def:"The vivid red of a cardinal's cassock, sitting between scarlet and crimson.",
-   obj:[["Cardinal's cassock","Cardinal (Catholic Church)"],["Northern cardinal","Northern cardinal"]],
+   obj:[["Cardinal's cassock","Cardinal (Catholic Church)","File:A Cardinal in Profile, 1880, by Jehan Georges Vibert (Morgan Library and Museum, New York City).jpg"],["Northern cardinal","Northern cardinal"]],
    ev:"Office, hierarchy, ceremonial power.",
    or:"Named for the vestments of Roman Catholic cardinals; the bird was named after the churchmen."},
   {n:"Ruby", hex:"#E0115F", t:2,
    def:"The red of the gemstone, tilted toward pink and magenta; jewel-bright and cool.",
-   obj:[["Ruby","Ruby"],["Ruby slippers","Ruby slippers"],["Pomegranate seeds","Pomegranate"]],
+   obj:[["Ruby","Ruby","File:Cut Ruby.jpg"],["Ruby slippers","Ruby slippers"],["Pomegranate seeds","Pomegranate"]],
    ev:"Treasure, glamour, the precious.",
    or:"Latin rubeus, red; the stone named the color."},
   {n:"Cerise", hex:"#DE3163", t:3,
@@ -331,7 +335,7 @@ const WORDS = [
    or:"The flower; Latin rosa."},
   {n:"Blush", hex:"#DE5D83", t:3,
    def:"A rosy pink with body to it, deeper than pastel; the pink of a cheek that has been noticed.",
-   obj:[["Rouge","Rouge (cosmetics)"],["Rosé wine","Rosé"]],
+   obj:[["Rouge","Rouge (cosmetics)","File:Bengali Hindu wedding DSCN1106 02.jpg"],["Rosé wine","Rosé"]],
    ev:"Modesty, exposure, the intimate.",
    or:"Old English blyscan, to glow red."},
   {n:"Puce", hex:"#CC8899", t:2,
@@ -341,67 +345,67 @@ const WORDS = [
    or:"French puce, flea."},
   {n:"Garnet", hex:"#733635", t:3,
    def:"A dark, brownish red, like the gemstone held away from the light.",
-   obj:[["Garnet","Garnet"],["Merlot","Merlot"]],
+   obj:[["Garnet","Garnet"],["Merlot","Merlot","File:Chateau Kirwan Merlot grapes being sorted.jpg"]],
    ev:"Age, warmth, a fireside rather than a fire.",
    or:"Old French grenat, from Latin granatum, pomegranate, whose seeds the stone resembles."},
   {n:"Burgundy", hex:"#800020", t:2,
    def:"A deep purplish red, the color of the wine; darker than crimson, redder than plum.",
-   obj:[["Red wine","Red wine"],["Burgundy wine","Burgundy wine"],["Velvet","Velvet"]],
+   obj:[["Red wine","Red wine"],["Burgundy wine","Burgundy wine","File:Bouteille de Romanée Conti.JPG"],["Velvet","Velvet","File:Morris and Co Acorn embossed velvet 1912.jpg"]],
    ev:"Wealth, age, autumn, restraint.",
    or:"Named for the wine of the Burgundy region of France."},
   {n:"Maroon", hex:"#800000", t:2,
    def:"A dark brownish red; burgundy with the purple drained out.",
-   obj:[["Chestnut","Chestnut"],["Flag of Qatar","Flag of Qatar"],["Kidney bean","Kidney bean"]],
+   obj:[["Chestnut","Chestnut","File:Chestnuts at Ljubljana Central Market.JPG"],["Flag of Qatar","Flag of Qatar"],["Kidney bean","Kidney bean"]],
    ev:"Institutional dignity, school colors, the settled.",
    or:"French marron, chestnut."},
   {n:"Claret", hex:"#7F1734", t:3,
    def:"The deep red of Bordeaux wine; a burgundy with a little more brown in the glass.",
-   obj:[["Bordeaux wine","Bordeaux wine"],["Claret jug","Claret jug"]],
+   obj:[["Bordeaux wine","Bordeaux wine","File:Lynch Bages 1970; Leoville-Las-Cases 1970 in decanters.jpg"],["Claret jug","Claret jug"]],
    ev:"Old money, decanters, English clubs.",
    or:"French clairet, a lighter red wine; the English name for the reds of Bordeaux."},
   {n:"Oxblood", hex:"#4A0000", t:3,
    def:"A very dark red-brown, nearly black; old leather and dried blood.",
-   obj:[["Dr. Martens boots","Dr. Martens"],["Sang de boeuf glaze","Sang de boeuf glaze"]],
+   obj:[["Dr. Martens boots","Dr. Martens","File:Dr martens boots.jpg"],["Sang de boeuf glaze","Sang de boeuf glaze"]],
    ev:"Toughness, age, the visceral.",
    or:"Literal: the color of an ox's blood; in ceramics, the Chinese sang de boeuf glaze."},
   {n:"Sanguine", hex:"#A9453B", t:3, approx:true,
    def:"Blood-red, and also the red-brown chalk of Renaissance drawings; the color of a flushed, hopeful face.",
-   obj:[["Red chalk portrait","Portrait of a Man in Red Chalk"],["Blood","Blood"]],
+   obj:[["Red chalk portrait","Portrait of a Man in Red Chalk","File:Sanzio 01 Plato Aristotle.jpg"],["Blood","Blood"]],
    ev:"Vitality, optimism, the medieval humor of blood.",
    or:"Latin sanguis, blood; the temperament and the chalk share the root."},
   {n:"Incarnadine", hex:"#B3454E", t:3, approx:true,
    def:"Flesh-pink in its first life, blood-red after Macbeth used it as a verb; now a crimson-pink for when red is too plain.",
-   obj:[["Macbeth","Macbeth"],["Raw meat","Meat"]],
+   obj:[["Macbeth","Macbeth","File:MacbethAndBanquo-Witches.jpg"],["Raw meat","Meat","File:Papaz yahnisi - cooking.jpg"]],
    ev:"Guilt, the stain that will not wash out.",
    or:"Italian incarnatino, flesh-colored, from Latin caro, flesh; Shakespeare made it a verb for turning red."},
   {n:"Alizarin", hex:"#E32636", t:3,
    def:"A cool, bluish crimson from the madder root; the painter's crimson.",
-   obj:[["Madder","Rubia tinctorum"],["Alizarin","Alizarin"]],
+   obj:[["Madder","Rubia tinctorum","File:Naturally dyed skeins.jpg"],["Alizarin","Alizarin","File:Alizarin01.jpg"]],
    ev:"Studios, tubes of paint, the romantic.",
    or:"The red dye of madder root, isolated in 1826 and synthesized in 1868."},
   {n:"Coral", hex:"#FF7F50", t:2,
    def:"A pinkish orange, warm and soft; orange with the heat turned down and a little pink stirred in.",
-   obj:[["Precious coral","Precious coral"],["Papaya","Papaya"]],
+   obj:[["Precious coral","Precious coral"],["Papaya","Papaya","File:Carica Papaya Thoran DSC 4459.jpg"]],
    ev:"Warmth, tropics, mid-century optimism.",
    or:"The red skeleton of Corallium rubrum, harvested for jewelry since antiquity."},
   {n:"Salmon", hex:"#FA8072", t:2,
    def:"A light pink-orange, the color of the fish's flesh; coral with more pink and less heat.",
-   obj:[["Salmon","Salmon as food"],["Grapefruit","Grapefruit"]],
+   obj:[["Salmon","Salmon as food","File:Frozen salmon fillet.jpg"],["Grapefruit","Grapefruit"]],
    ev:"Appetite, softness, sunrise on a wall.",
    or:"The fish, whose flesh takes its color from the crustaceans it eats."},
   {n:"Terracotta", hex:"#E2725B", t:2,
    def:"The orange-red of fired clay, earthy and matte; brick with the pink still in it.",
-   obj:[["Terracotta Army","Terracotta Army"],["Flowerpot","Flowerpot"],["Roof tiles","Roof tiles"]],
+   obj:[["Terracotta Army","Terracotta Army","File:Funerary figurines from the mausoleum of Lu Wu, Prince of Liang.jpg"],["Flowerpot","Flowerpot"],["Roof tiles","Roof tiles"]],
    ev:"Mediterranean heat, antiquity, the handmade.",
    or:"Italian terra cotta, baked earth."},
   {n:"Rust", hex:"#B7410E", t:2,
    def:"The red-brown of oxidized iron; a burnt orange gone dull and dark.",
-   obj:[["Rust","Rust"],["Shipwreck","Shipwreck"],["Weathering steel","Weathering steel"]],
+   obj:[["Rust","Rust"],["Shipwreck","Shipwreck","File:Assalama.jpg"],["Weathering steel","Weathering steel"]],
    ev:"Decay, abandonment, time made visible.",
    or:"Old English rūst, related to red."},
   {n:"Auburn", hex:"#A52A2A", t:3,
    def:"A reddish brown, said mostly of hair; the red is felt more than seen.",
-   obj:[["Auburn hair","Auburn hair"],["Irish Setter","Irish Setter"],["Titian","Titian"]],
+   obj:[["Auburn hair","Auburn hair"],["Irish Setter","Irish Setter","File:Rod setter.jpg"],["Titian's Flora","Flora (Titian)"]],
    ev:"Autumn, warmth, the Pre-Raphaelite.",
    or:"From Latin alburnus, whitish; medieval scribes confused it with brown and the meaning flipped."},
   {n:"Cordovan", hex:"#893F45", t:3,
@@ -413,12 +417,12 @@ const WORDS = [
   /* ---------------- oranges and browns ---------------- */
   {n:"Tangerine", hex:"#F28500", t:3,
    def:"A bright, clean orange with a drop of red; the fruit at its ripest.",
-   obj:[["Tangerine","Tangerine"],["Traffic cone","Traffic cone"]],
+   obj:[["Tangerine","Tangerine","File:Tangerine 2009-03-11.jpg"],["Traffic cone","Traffic cone","File:Traffic cones london.jpg"]],
    ev:"Cheer, appetite, the loud and friendly.",
    or:"The fruit, named for Tangier, Morocco."},
   {n:"Persimmon", hex:"#EC5800", t:3,
    def:"A deep red-orange, the color of the ripe fruit; darker than tangerine, redder than pumpkin.",
-   obj:[["Persimmon","Persimmon"],["Ember","Ember"]],
+   obj:[["Persimmon","Persimmon"],["Ember","Ember","File:Hiillos Aitokiuas.jpg"]],
    ev:"Autumn lanterns, ripeness, the East Asian palette.",
    or:"Powhatan (Algonquian) pessamin, dried fruit."},
   {n:"Apricot", hex:"#FBCEB1", t:3,
@@ -433,22 +437,22 @@ const WORDS = [
    or:"Latin persicum, the Persian apple."},
   {n:"Burnt orange", hex:"#CC5500", t:3,
    def:"A dark, rusty orange with brown in it; orange after the fire.",
-   obj:[["Maple leaves","Maple"],["Pumpkin","Pumpkin"]],
+   obj:[["Maple in autumn","Autumn leaf color"],["Pumpkin","Pumpkin"]],
    ev:"Autumn, 1970s interiors, the smoky.",
    or:"Descriptive: orange darkened as if scorched."},
   {n:"Sienna", hex:"#882D17", t:2,
    def:"A reddish brown earth pigment, warm and opaque; raw it is yellow-brown, burnt it turns red.",
-   obj:[["Siena","Siena"],["Red earth pigment","Ochre"]],
+   obj:[["Siena","Siena","File:Interior of the dome, Duomo, Siena, Italy.jpg"],["Red earth pigment","Ochre"]],
    ev:"Tuscany, old frescoes, the sun-baked.",
    or:"Terra di Siena, earth from Siena, Italy, dug since the Renaissance."},
   {n:"Burnt sienna", hex:"#E97451", t:3,
    def:"Sienna roasted into a bright red-orange brown; hotter and lighter than the raw earth.",
-   obj:[["Siena rooftops","Siena"],["Oak leaves in autumn","Oak"]],
+   obj:[["Siena rooftops","Siena"],["Cork oak bark","Oak","File:Cork oak trunk section.jpg"]],
    ev:"Warmth, sketchbooks, the painterly.",
    or:"Raw sienna heated until its iron oxide reddens."},
   {n:"Umber", hex:"#635147", t:2,
    def:"A dark, dull brown earth pigment, cooler and grayer than sienna; the color of shadow.",
-   obj:[["Umbria","Umbria"],["Peat","Peat"]],
+   obj:[["Umber pigment","Umber","File:Terra ombra naturale umber.jpg"],["Peat","Peat"]],
    ev:"Shadow, the underpainting, the sober.",
    or:"Latin umbra, shadow, or the region of Umbria; scholars still argue."},
   {n:"Sepia", hex:"#704214", t:2,
@@ -458,12 +462,12 @@ const WORDS = [
    or:"Greek sēpia, cuttlefish, whose ink was the original pigment."},
   {n:"Russet", hex:"#80461B", t:2,
    def:"A reddish brown with orange in it; coarse homespun cloth, and the skin of a russet apple.",
-   obj:[["Russet apple","Russet apple"],["Russet Burbank potato","Russet Burbank"]],
+   obj:[["Russet apple","Russet apple"],["Russet Burbank potato","Russet Burbank","File:Russet potato.jpg"]],
    ev:"Rustic, autumnal, the humble.",
    or:"Old French rousset, reddish, from Latin russus; a peasants' cloth by law in medieval England."},
   {n:"Chestnut", hex:"#954535", t:3,
    def:"A warm, reddish brown, like the nut's shell; a horse-coat word.",
-   obj:[["Chestnut","Chestnut"],["Chestnut horse","Chestnut (coat)"]],
+   obj:[["Chestnut","Chestnut","File:Chestnuts at Ljubljana Central Market.JPG"],["Chestnut horse","Chestnut (coat)"]],
    ev:"Autumn, horses, the wholesome.",
    or:"The nut; Greek kastanea."},
   {n:"Mahogany", hex:"#C04000", t:3,
@@ -473,27 +477,27 @@ const WORDS = [
    or:"The wood; the word's origin is uncertain, first recorded in the 1600s."},
   {n:"Copper", hex:"#B87333", t:2,
    def:"A reddish-brown metallic orange; the metal before it greens.",
-   obj:[["Copper","Copper"],["Penny","Penny (United States coin)"]],
+   obj:[["Copper","Copper"],["Penny","Penny (United States coin)","File:1811 cent obv.jpg"]],
    ev:"Conductivity, warmth, the newly minted.",
    or:"Latin cuprum, from Cyprium aes, metal of Cyprus."},
   {n:"Bronze", hex:"#CD7F32", t:2,
    def:"A dull golden brown, the color of the alloy; copper with yellow in it and the shine dimmed.",
-   obj:[["Bronze sculpture","Bronze sculpture"],["Bronze medal","Bronze medal"]],
+   obj:[["Bronze sculpture","Bronze sculpture","File:Busto de Carlos V.jpg"],["Bronze medal","Bronze medal"]],
    ev:"Antiquity, third place, the enduring.",
    or:"Italian bronzo, perhaps from Persian birinj, brass."},
   {n:"Tawny", hex:"#CD5700", t:2,
    def:"A warm orange-brown, like a lion's coat or tawny port; brown with the sun still in it.",
-   obj:[["Tawny owl","Tawny owl"],["Lion","Lion"],["Port wine","Port wine"]],
+   obj:[["Tawny owl","Tawny owl"],["Lion","Lion","File:Lion (Panthera leo) male 6y.jpg"],["Port wine","Port wine"]],
    ev:"The savanna, dusk, the feline.",
    or:"Anglo-Norman tauné, tanned, from the tanning of leather."},
   {n:"Fulvous", hex:"#E48400", t:3,
    def:"A dull reddish yellow or tawny orange; a naturalist's word for dry grass and certain ducks.",
-   obj:[["Fulvous whistling duck","Fulvous whistling duck"],["Hay","Hay"]],
+   obj:[["Fulvous whistling duck","Fulvous whistling duck"],["Hay","Hay","File:Hayrack full.jpg"]],
    ev:"Field guides, savanna, the precise.",
    or:"Latin fulvus, tawny; in English use since the 1600s."},
   {n:"Ochre", hex:"#CC7722", t:1,
    def:"An earthy yellow-orange brown, the oldest pigment; dull where saffron is bright, and deeper than the pure hue.",
-   obj:[["Ochre","Ochre"],["Lascaux cave paintings","Lascaux"],["Roussillon ochre cliffs","Roussillon, Vaucluse"]],
+   obj:[["Ochre","Ochre"],["Lascaux cave paintings","Lascaux"],["Roussillon ochre cliffs","Roussillon, Vaucluse","File:Roussillon 2011 01.jpg"]],
    ev:"Prehistory, earth, the primordial.",
    or:"Greek ōkhros, pale yellow."},
   {n:"Amber", hex:"#FFBF00", t:1,
@@ -533,14 +537,14 @@ const WORDS = [
    or:"French écru, raw, unbleached."},
   {n:"Khaki", hex:"#C3B091", t:3,
    def:"A dusty tan-brown, the color of dry earth; the soldier's camouflage.",
-   obj:[["Khaki drill","Khaki drill"],["Dust","Dust"]],
+   obj:[["Khaki uniform","Khaki"],["Dust","Dust"]],
    ev:"Empire, deserts, the practical.",
    or:"Urdu khākī, dust-colored, from Persian khāk, dust; adopted by British forces in India in 1848."},
 
   /* ---------------- yellows ---------------- */
   {n:"Gold", hex:"#FFD700", t:2,
    def:"A deep, saturated yellow with warmth, standing in for the metal's shine.",
-   obj:[["Gold","Gold"],["Wheat","Wheat"],["Gold leaf","Gold leaf"]],
+   obj:[["Gold","Gold","File:Gold bullion ap 001.JPG"],["Wheat","Wheat"],["Gold leaf","Gold leaf"]],
    ev:"Wealth, glory, the divine.",
    or:"Old English gold, from a root meaning yellow or bright."},
   {n:"Mustard", hex:"#FFDB58", t:2,
@@ -570,7 +574,7 @@ const WORDS = [
    or:"Latin chrisma, anointing oil, crossed with Gaulish crama."},
   {n:"Straw", hex:"#E4D96F", t:3,
    def:"A pale, dull yellow, like dried grain stalks.",
-   obj:[["Straw","Straw"],["Straw hat","Straw hat"]],
+   obj:[["Straw","Straw","File:Pile-of-straw.jpg"],["Straw hat","Straw hat","File:Bangora Cowboy Hat.jpg"]],
    ev:"Summer's end, the rural, the brittle.",
    or:"Old English strēaw."},
   {n:"Jonquil", hex:"#F4CA16", t:3,
@@ -580,7 +584,7 @@ const WORDS = [
    or:"French jonquille, from Spanish junquillo, little rush, for the plant's leaves."},
   {n:"Citrine", hex:"#E4D00A", t:3,
    def:"A yellow with a greenish, lemony tint, named for the quartz gemstone.",
-   obj:[["Quartz","Quartz"],["Lemon","Lemon"]],
+   obj:[["Citrine","Citrine"],["Lemon","Lemon","File:Giovanna Garzoni (Italian) - Still Life with Bowl of Citrons - Google Art Project.jpg"]],
    ev:"Sharpness, cut stone, the citrus.",
    or:"Latin citrus, through Old French citrin, lemon-colored."},
   {n:"Gamboge", hex:"#E49B0F", t:3,
@@ -612,22 +616,22 @@ const WORDS = [
    or:"Old English mos, bog."},
   {n:"Sage", hex:"#BCB88A", t:2,
    def:"A grayish, silvery green with yellow in it; green that has been dusted with ash.",
-   obj:[["Sage","Salvia officinalis"],["Sagebrush","Artemisia tridentata"]],
+   obj:[["Sage","Salvia officinalis","File:Salvia officinalis close up.jpg"],["Sagebrush","Artemisia tridentata"]],
    ev:"Calm, herbs, the high desert.",
    or:"The herb; Latin salvia, from salvus, healthy."},
   {n:"Celadon", hex:"#ACE1AF", t:1,
    def:"A pale, grayish jade-green, the color of the glaze; green with the saturation turned nearly off.",
-   obj:[["Celadon ware","Celadon"],["Goryeo celadon","Goryeo ware"]],
+   obj:[["Celadon ware","Celadon","File:Celadon Dish with Inlaid Grape and Scroll Design.jpg"],["Goryeo celadon","Goryeo ware","File:Celadon Chair with Openwork Decoration.jpg"]],
    ev:"Serenity, porcelain, East Asian restraint.",
    or:"Named for Céladon, a shepherd in Honoré d'Urfé's novel L'Astrée (1607) who wore pale green ribbons."},
   {n:"Jade", hex:"#00A86B", t:2,
    def:"A rich, bluish green, the polished stone at its best; deeper than celadon, cooler than emerald.",
-   obj:[["Jade","Jade"],["Jadeite","Jadeite"]],
+   obj:[["Jade","Jade","File:Mayan Jade.jpg"],["Jadeite","Jadeite"]],
    ev:"Virtue, the imperial, the precious-but-hard.",
    or:"Spanish piedra de ijada, stone of the flank, once believed to cure kidney pain."},
   {n:"Emerald", hex:"#50C878", t:1,
    def:"A bright, clear green with a hint of blue; the gem, and Ireland on a postcard.",
-   obj:[["Emerald","Emerald"],["Ireland","Ireland"]],
+   obj:[["Emerald","Emerald"],["Ireland","Ireland","File:Irl-female red deer Killarney.jpg"]],
    ev:"Envy, the lush, the precious.",
    or:"Greek smaragdos, through Old French esmeraude."},
   {n:"Viridian", hex:"#40826D", t:2,
@@ -642,17 +646,17 @@ const WORDS = [
    or:"Greek malakhē, mallow, for the leaf color."},
   {n:"Verdigris", hex:"#43B3AE", t:2,
    def:"The blue-green patina on weathered copper and bronze; teal with a chalky, corroded softness.",
-   obj:[["Statue of Liberty","Statue of Liberty"],["Copper roof","Copper in architecture"]],
+   obj:[["Statue of Liberty","Statue of Liberty"],["Copper roof","Copper in architecture","File:County Fire Office roof.jpg"]],
    ev:"Age, weather, the beautifully ruined.",
    or:"Old French vert-de-Grèce, green of Greece."},
   {n:"Forest green", hex:"#228B22", t:3,
    def:"A dark, natural green, the canopy in summer; deeper than emerald, without its blue.",
-   obj:[["Forest","Forest"],["Pine","Pine"]],
+   obj:[["Forest","Forest","File:Brussels Zonienwoud.jpg"],["Pine","Pine"]],
    ev:"Shelter, the wild, Robin Hood.",
    or:"Descriptive."},
   {n:"Hunter green", hex:"#355E3B", t:3,
    def:"A very dark, slightly gray green, the color of nineteenth-century hunting coats.",
-   obj:[["Billiard table","Billiard table"],["Hunting","Hunting"]],
+   obj:[["Billiard table","Billiard table"],["Yew hedge","Taxus baccata","File:Labyrinth, Schönbrunn garden.jpg"]],
    ev:"Tradition, tweed, the country estate.",
    or:"Named for the coats of English hunters in the 1800s."},
   {n:"Fern", hex:"#4F7942", t:3,
@@ -662,7 +666,7 @@ const WORDS = [
    or:"Old English fearn."},
   {n:"Bottle green", hex:"#006A4E", t:3,
    def:"A dark, bluish green, like thick old glass held to the light.",
-   obj:[["Glass bottle","Glass bottle"],["Wine bottle","Wine bottle"]],
+   obj:[["Glass bottle","Glass bottle","File:A Post Medieval glass wine bottle dating from AD 1690-1700. (FindID 891131) (cropped).jpg"],["Wine bottle","Wine bottle"]],
    ev:"School uniforms, cellars, the Victorian.",
    or:"The dark glass of antique bottles."},
   {n:"Mint", hex:"#3EB489", t:3,
@@ -672,7 +676,7 @@ const WORDS = [
    or:"The herb; Latin mentha."},
   {n:"Sea green", hex:"#2E8B57", t:3,
    def:"A medium bluish green, the color of shallow water over sand.",
-   obj:[["Sea","Sea"],["Lagoon","Lagoon"]],
+   obj:[["Whitehaven Beach shallows","Whitehaven Beach"],["Lagoon","Lagoon","File:Boraboraluft gerade.jpg"]],
    ev:"Shallows, the maritime, the calm.",
    or:"Descriptive; in use since the 1500s."},
   {n:"Eau de Nil", hex:"#7EA58F", t:3, approx:true,
@@ -694,12 +698,12 @@ const WORDS = [
   /* ---------------- cyans and teals ---------------- */
   {n:"Teal", hex:"#008080", t:1,
    def:"A dark blue-green, exactly between the two; named for the duck's eye stripe.",
-   obj:[["Eurasian teal","Eurasian teal"],["Lagoon","Lagoon"]],
+   obj:[["Eurasian teal","Eurasian teal","File:Common Teal (Anas crecca) near Hodal, Haryana W IMG 6512.jpg"],["Lagoon","Lagoon","File:KALOGRIA Panorama.jpg"]],
    ev:"Depth, the 1990s, the sophisticated.",
    or:"The duck, whose head carries the color."},
   {n:"Turquoise", hex:"#40E0D0", t:2,
    def:"A bright greenish blue, the color of the stone; teal with the lights on.",
-   obj:[["Turquoise","Turquoise"],["Caribbean shallows","Caribbean Sea"],["Native American jewelry","Native American jewelry"]],
+   obj:[["Turquoise","Turquoise"],["Caribbean shallows","Caribbean Sea","File:Beach Of Cayo Coco (108034377).jpeg"],["Native American jewelry","Native American jewelry","File:Old and new Navajo bracelets.jpg"]],
    ev:"The Southwest, shallows, the talismanic.",
    or:"French turquoise, Turkish, since the stone reached Europe through Turkey."},
   {n:"Aquamarine", hex:"#7FFFD4", t:3,
@@ -709,29 +713,29 @@ const WORDS = [
    or:"Latin aqua marina, seawater."},
   {n:"Cerulean", hex:"#007BA7", t:1,
    def:"A clear, medium sky blue with a hint of green; the sky at noon, not at the horizon.",
-   obj:[["Sky","Sky"],["Cerulean warbler","Cerulean warbler"],["Kingfisher","Kingfisher"]],
+   obj:[["Sky","Sky","File:Appearance of sky for weather forecast, Dhaka, Bangladesh.JPG"],["Cerulean warbler","Cerulean warbler"],["Kingfisher","Kingfisher"]],
    ev:"Openness, the celestial, calm.",
    or:"Latin caeruleus, sky-blue, from caelum, sky."},
 
   /* ---------------- blues ---------------- */
   {n:"Azure", hex:"#007FFF", t:2,
    def:"A bright, pure blue with a whisper of cyan; the heraldic blue of skies and banners.",
-   obj:[["Sky","Sky"],["Azurite","Azurite"],["French Riviera","French Riviera"]],
+   obj:[["Sky","Sky","File:Blue Sky, Dhaka, Bangladesh.jpg"],["Azurite","Azurite","File:Azurite-284714.jpg"],["French Riviera","French Riviera","File:Agay vu du Dramont.JPG"]],
    ev:"Heraldry, the Mediterranean, the ideal.",
    or:"Persian lāžward, lapis lazuli, through Arabic and Old French; the initial l was lost on the way."},
   {n:"Sky blue", hex:"#87CEEB", t:3,
    def:"A pale, soft blue, the daytime sky near the horizon.",
-   obj:[["Sky","Sky"]],
+   obj:[["Sky","Sky","File:Cumulus clouds in fair weather.jpeg"]],
    ev:"Innocence, openness, the everyday.",
    or:"Descriptive."},
   {n:"Powder blue", hex:"#B0E0E6", t:3,
    def:"A very pale, slightly grayish blue; the powdered smalt once used to blue laundry.",
-   obj:[["Hydrangea","Hydrangea"],["Jasperware","Jasperware"],["Cobalt glass","Cobalt glass"]],
+   obj:[["Hydrangea","Hydrangea","File:BlueHydrangea.JPG"],["Jasperware","Jasperware","File:Quiver vase, modeling attributed to William Hackwood, 1785-1790, solid pale blue jasper, dark blue dip, white reliefs - Wedgwood Museum - Barlaston, Stoke-on-Trent, England - DSC09647.jpg"],["Cobalt glass","Cobalt glass"]],
    ev:"Nurseries, the delicate, the mid-century.",
    or:"Powdered smalt (cobalt glass) used as a laundry whitener."},
   {n:"Cobalt", hex:"#0047AB", t:1,
    def:"A deep, vivid, slightly purplish blue; the blue of Chinese porcelain and of glass.",
-   obj:[["Blue and white porcelain","Blue and white pottery"],["Cobalt glass","Cobalt glass"],["Cobalt","Cobalt"]],
+   obj:[["Blue and white porcelain","Blue and white pottery","File:A blue and white plate with Willow pattern.jpg"],["Cobalt glass","Cobalt glass","File:Smalte-Historische Farbstoffsammlung.jpg"],["Cobalt","Cobalt"]],
    ev:"Intensity, ceramics, the ultramodern.",
    or:"German Kobold, goblin; miners blamed the ore's poisonous fumes on goblins."},
   {n:"Sapphire", hex:"#0F52BA", t:2,
@@ -741,12 +745,12 @@ const WORDS = [
    or:"Greek sappheiros, which probably meant lapis lazuli."},
   {n:"Ultramarine", hex:"#120A8F", t:2,
    def:"The deepest, most purplish pure blue; ground lapis lazuli, once costlier than gold.",
-   obj:[["Lapis lazuli","Lapis lazuli"],["International Klein Blue","International Klein Blue"],["Madonna in art","Madonna (art)"]],
+   obj:[["Lapis lazuli","Lapis lazuli","File:Lapis lazuli, Smithsonian Objects of Wonder.jpg"],["International Klein Blue","International Klein Blue"],["Madonna in art","Madonna (art)"]],
    ev:"The sacred, the costly, the absolute.",
    or:"Latin ultramarinus, beyond the sea, since the lapis came from Afghanistan by ship."},
   {n:"Navy", hex:"#000080", t:2,
    def:"A very dark blue, nearly black in low light; the uniform blue.",
-   obj:[["Royal Navy uniform","Uniforms of the Royal Navy"],["Sea at night","Sea"]],
+   obj:[["Royal Navy uniform","Uniforms of the Royal Navy"],["Navy blazer","Blazer"]],
    ev:"Authority, formality, the dependable.",
    or:"The dark blue of British Royal Navy uniforms, adopted in 1748."},
   {n:"Prussian blue", hex:"#003153", t:2,
@@ -756,7 +760,7 @@ const WORDS = [
    or:"Made by accident in Berlin around 1706; Prussian uniforms wore it."},
   {n:"Midnight blue", hex:"#191970", t:3,
    def:"A dark blue with more violet than navy; the sky an hour after dusk.",
-   obj:[["Night sky","Night sky"]],
+   obj:[["Night sky","Night sky","File:Паранальские ночи.jpg"]],
    ev:"Mystery, formalwear, the nocturnal.",
    or:"Descriptive."},
   {n:"Royal blue", hex:"#4169E1", t:3,
@@ -766,7 +770,7 @@ const WORDS = [
    or:"Said to have been created for a dress for Queen Charlotte in the early 1800s."},
   {n:"Cornflower", hex:"#6495ED", t:3,
    def:"A medium, soft blue with a hint of violet; the wildflower's blue.",
-   obj:[["Cornflower","Centaurea cyanus"]],
+   obj:[["Cornflower","Centaurea cyanus","File:Apis mellifera, France.jpg"]],
    ev:"Meadows, the pastoral, German Romanticism.",
    or:"The flower Centaurea cyanus."},
   {n:"Lapis lazuli", hex:"#26619C", t:2,
@@ -813,7 +817,7 @@ const WORDS = [
    or:"The flower; Latin viola."},
   {n:"Amethyst", hex:"#9966CC", t:1,
    def:"A medium purple with a soft, quartz clarity; violet with pink in it.",
-   obj:[["Amethyst","Amethyst"]],
+   obj:[["Amethyst","Amethyst","File:Geode Reference -25.jpg"]],
    ev:"Sobriety, the bishop's ring, the crystalline.",
    or:"Greek amethystos, not drunk: the stone was thought to prevent intoxication."},
   {n:"Lavender", hex:"#B57EDC", t:2,
@@ -838,7 +842,7 @@ const WORDS = [
    or:"Greek hēliotropion, sun-turner."},
   {n:"Orchid", hex:"#DA70D6", t:3,
    def:"A light pinkish purple, like the flower; brighter than lilac.",
-   obj:[["Orchid","Orchidaceae"]],
+   obj:[["Orchid","Orchidaceae","File:Plant Orchid Cymbidium aloifolium P1110661 05 - cropped.jpg"]],
    ev:"The exotic, the cultivated, the delicate.",
    or:"Greek orkhis, testicle, for the shape of the tubers."},
   {n:"Wisteria", hex:"#C9A0DC", t:3,
@@ -863,7 +867,7 @@ const WORDS = [
    or:"The city; the color name is modern."},
   {n:"Tyrian purple", hex:"#66023C", t:2,
    def:"A deep reddish purple, the dye of emperors, pressed from sea snails; darker and redder than most purples.",
-   obj:[["Murex snail","Bolinus brandaris"],["Toga","Toga"]],
+   obj:[["Murex snail","Bolinus brandaris"],["Tyrian purple dye","Tyrian purple"]],
    ev:"Imperial Rome, the unobtainable, the ancient.",
    or:"From Tyre, in modern Lebanon, where the murex dye was made."},
   {n:"Magenta", hex:"#FF00FF", t:1,
@@ -875,7 +879,7 @@ const WORDS = [
   /* ---------------- neutrals: whites, grays, blacks ---------------- */
   {n:"Ivory", hex:"#FFFFF0", t:2, neutral:true,
    def:"A warm, soft white with the faintest yellow; white that has aged gracefully.",
-   obj:[["Ivory","Ivory"],["Piano keys","Piano"]],
+   obj:[["Ivory","Ivory","File:AGMA Ivory Pyxis with Griffins Attacking Stags.jpg"],["Piano keys","Piano"]],
    ev:"Luxury, age, the forbidden.",
    or:"Latin ebur, through Old French ivurie."},
   {n:"Alabaster", hex:"#EDEAE0", t:3, neutral:true, approx:true,
@@ -1351,24 +1355,37 @@ const wikiCache = new Map();
 function lsGet(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } }
 function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 
-/* Lead photo of a Wikipedia article, by title. Cached in memory and, for a
-   month, in localStorage, so the second look at a word is instant. */
-function wikiImage(title){
-  if (wikiCache.has(title)) return Promise.resolve(wikiCache.get(title));
-  const key = 'cw:wiki:' + title, cached = lsGet(key);
-  if (cached && cached.ts && Date.now() - cached.ts < 30 * 864e5){ wikiCache.set(title, cached); return Promise.resolve(cached); }
-  const url = 'https://en.wikipedia.org/w/api.php?action=query&prop=pageimages%7Cdescription&piprop=thumbnail'
-            + '&pithumbsize=720&redirects=1&format=json&formatversion=2&origin=*&titles=' + encodeURIComponent(title);
+/* A photo for a Wikipedia article: the pinned file when the object names one,
+   otherwise the article's lead image. One request either way. Cached in memory
+   and, for a month, in localStorage, so the second look at a word is instant. */
+function wikiImage(title, file){
+  const key = file ? 'cw:file:' + file + '|' + title : 'cw:wiki:' + title;
+  if (wikiCache.has(key)) return Promise.resolve(wikiCache.get(key));
+  const cached = lsGet(key);
+  if (cached && cached.ts && Date.now() - cached.ts < 30 * 864e5){ wikiCache.set(key, cached); return Promise.resolve(cached); }
+  const base = 'https://en.wikipedia.org/w/api.php?action=query&redirects=1&format=json&formatversion=2&origin=*';
+  const url = file
+    ? base + '&prop=imageinfo%7Cdescription&iiprop=url&iiurlwidth=720&titles=' + encodeURIComponent('File:' + file.replace(/^File:/, '') + '|' + title)
+    : base + '&prop=pageimages%7Cdescription&piprop=thumbnail&pithumbsize=720&titles=' + encodeURIComponent(title);
   const p = fetch(url)
     .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
     .then(d => {
-      const page = d && d.query && d.query.pages && d.query.pages[0];
-      const res = { ts: Date.now(), title: (page && page.title) || title, missing: !page || !!page.missing,
-                    src: page && page.thumbnail ? page.thumbnail.source : null, desc: (page && page.description) || '' };
-      lsSet(key, res); wikiCache.set(title, res); return res;
+      const pages = (d && d.query && d.query.pages) || [];
+      let res;
+      if (file){
+        const fp = pages.find(p => p.imageinfo && p.imageinfo[0]);
+        const ap = pages.find(p => p !== fp) || null;
+        res = { ts: Date.now(), title: (ap && ap.title) || title, missing: !ap || !!ap.missing,
+                src: fp ? (fp.imageinfo[0].thumburl || fp.imageinfo[0].url) : null, desc: (ap && ap.description) || '' };
+      } else {
+        const page = pages[0];
+        res = { ts: Date.now(), title: (page && page.title) || title, missing: !page || !!page.missing,
+                src: page && page.thumbnail ? page.thumbnail.source : null, desc: (page && page.description) || '' };
+      }
+      lsSet(key, res); wikiCache.set(key, res); return res;
     })
-    .catch(err => { wikiCache.delete(title); throw err; });
-  wikiCache.set(title, p);
+    .catch(err => { wikiCache.delete(key); throw err; });
+  wikiCache.set(key, p);
   return p;
 }
 
@@ -1429,9 +1446,11 @@ async function loadPhoto(w, i){
   box.classList.remove('loaded'); box.textContent = 'Loading photo…'; cap.textContent = '';
   const order = [i].concat(w.obj.map((_, k) => k).filter(k => k !== i));
   for (const k of order){
-    const [label, title] = w.obj[k];
-    let res;
-    try { res = await wikiImage(title); } catch (err) { res = null; }
+    const [label, title, file] = w.obj[k];
+    let res = null;
+    if (file){ try { res = await wikiImage(title, file); } catch (err) { res = null; } }
+    if (req !== photoReq) return;
+    if (!res || !res.src){ try { res = await wikiImage(title); } catch (err) { res = null; } }
     if (req !== photoReq) return;
     if (!res || !res.src) continue;
     const img = new Image();
