@@ -131,6 +131,9 @@
   .dot{position:absolute;left:0;top:0;z-index:1;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
        background:var(--c);box-shadow:0 0 0 1.5px var(--bg);will-change:transform;transition:opacity .15s ease;}
   .dot.neutral{border-radius:2px;}
+  .dot{cursor:pointer;}
+  .dot::after{content:'';position:absolute;inset:-5px;border-radius:50%;} /* 20px hit area */
+  .dot.pinned{z-index:3;box-shadow:0 0 0 1.5px var(--bg), 0 0 0 3.5px var(--accent);}
   .lbl{position:absolute;left:0;top:0;z-index:2;display:inline-flex;align-items:center;gap:6px;will-change:transform;
        font-family:var(--body);font-weight:500;font-size:13px;line-height:1.3;color:var(--ink);
        background:color-mix(in srgb, var(--surface) 95%, transparent);border:1px solid var(--border);
@@ -1120,7 +1123,7 @@ const stage = $('#stage'), canvas = $('#band'), ctx = canvas.getContext('2d');
 const layer = $('#layer'), headersEl = $('#headers');
 const view = { s: 1, tx: 0, ty: 0 };
 let fitScale = 1, showAll = false, hypOnly = false;
-let pinned = null, hovered = null, hits = new Set(), searching = false;
+let pinned = null, hits = new Set(), searching = false;
 
 const hdrEls = HDRS.map(h => { const e = el('div', 'hdr', esc(h.n)); headersEl.append(e); return {e, x: hueToX(h.h) * W}; });
 hdrEls.push({ e: (() => { const e = el('div','hdr','Neutrals'); headersEl.append(e); return e; })(), x: STRIP_X + STRIP_W/2 });
@@ -1398,7 +1401,7 @@ function renderDefault(){
       <p><strong>Left to right is hue.</strong> Red through orange, yellow, green, blue and violet, then out to magenta. The circle is cut between aubergine and rose, so the pinks sit beside the reds.</p>
       <p><strong>Up and down is lightness.</strong> A word on the band is its hue at full strength. Above the band are the tints (peach, celadon, periwinkle). Below it are the shades (burgundy, umber, navy). The strip on the right holds the whites, grays and blacks.</p>
       <p><strong>Muted words</strong> like ochre, sage and glaucous sit at their hue, but their swatch is grayer than the band behind them. That gap is the word.</p>
-      <p>Hover a word to preview it here. <strong>Click to pin</strong> it; <kbd>Esc</kbd> unpins. Scroll to zoom, drag to pan, <kbd>Shift</kbd> + scroll slides sideways. Zoom in and more words appear.</p>
+      <p><strong>Click a word or its dot</strong> to show it here; hovering only shows its name. <kbd>Esc</kbd> or a click on empty map clears it. Scroll to zoom, drag to pan, <kbd>Shift</kbd> + scroll slides sideways. Zoom in and more words appear.</p>
       <p class="stat">${WORDS.length} words · ${approx} with approximate swatches · photos from Wikipedia, fetched when you look</p>
     </div>`;
 }
@@ -1466,33 +1469,26 @@ async function loadPhoto(w, i){
   }
   box.textContent = navigator.onLine === false
     ? 'Offline. Photos come from Wikipedia and need a connection.'
-    : failed ? 'Wikipedia did not answer just now. Hover the word again in a moment.'
+    : failed ? 'Wikipedia did not answer just now. Click the word again in a moment.'
     : 'No photo found on Wikipedia for these objects.';
 }
 
-/* ---------- hover previews, click pins ---------- */
-function updatePanel(){ const w = hovered || pinned; if (w) renderWord(w); else renderDefault(); }
-let hoverTimer = 0;
-function setHovered(w){
-  clearTimeout(hoverTimer);
-  hoverTimer = setTimeout(() => { if (hovered !== w){ hovered = w; updatePanel(); } }, 110);
-}
+/* ---------- selection: only a click changes the panel ----------
+   Hover shows a word's name (the label, or the dot's tooltip) and nothing else,
+   so the pointer can cross other dots on its way to the panel without losing
+   the selected word. Esc or a click on empty map clears it. */
+function updatePanel(){ if (pinned) renderWord(pinned); else renderDefault(); }
 function pin(w){
-  if (pinned){ pinned.lblEl.classList.remove('pinned'); pinned.lblEl.setAttribute('aria-pressed', 'false'); }
+  if (pinned){ pinned.lblEl.classList.remove('pinned'); pinned.lblEl.setAttribute('aria-pressed', 'false'); pinned.dotEl.classList.remove('pinned'); }
   pinned = w;
-  if (w){ w.lblEl.classList.add('pinned'); w.lblEl.setAttribute('aria-pressed', 'true'); }
-  hovered = null; updatePanel(); scheduleCollide();
+  if (w){ w.lblEl.classList.add('pinned'); w.lblEl.setAttribute('aria-pressed', 'true'); w.dotEl.classList.add('pinned'); }
+  updatePanel(); scheduleCollide();
 }
-layer.addEventListener('pointerover', e => { const t = e.target.closest('[data-id]'); if (t) setHovered(WORDS[+t.dataset.id]); });
-/* A preview lingers after the pointer leaves, so the panel can be used. When a
-   word is pinned, leaving the map returns the panel to it. */
-stage.addEventListener('pointerleave', () => { if (pinned && hovered){ clearTimeout(hoverTimer); hovered = null; updatePanel(); } });
-layer.addEventListener('focusin', e => { const t = e.target.closest('.lbl'); if (t){ clearTimeout(hoverTimer); hovered = WORDS[+t.dataset.id]; updatePanel(); } });
 layer.addEventListener('click', e => {
   if (performance.now() < suppressClickUntil) return;
-  const t = e.target.closest('.lbl'); if (!t) return;
+  const t = e.target.closest('[data-id]'); if (!t) return;
   const w = WORDS[+t.dataset.id];
-  pin(pinned === w ? null : w);
+  if (pinned !== w) pin(w);
 });
 stage.addEventListener('click', e => {
   if (performance.now() < suppressClickUntil) return;
